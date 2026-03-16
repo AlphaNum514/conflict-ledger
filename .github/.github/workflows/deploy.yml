@@ -1,0 +1,78 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── Validate data.json before deploy ────────────────────
+      - name: Validate data.json
+        run: |
+          echo "Validating data.json..."
+          python3 -c "
+          import json, sys
+          with open('data.json') as f:
+              data = json.load(f)
+          required = ['sectors', 'defenseContractors', 'regionalSpend', 'scenarios', 'calculatorPresets']
+          for key in required:
+              assert key in data, f'Missing key: {key}'
+          assert len(data['sectors']['labels']) == len(data['sectors']['ytdReturns']), \
+              'sectors labels/values length mismatch'
+          assert set(data['scenarios'].keys()) == {'bull','base','bear'}, \
+              'scenarios must have bull/base/bear'
+          print('data.json valid ✓')
+          "
+
+      # ── Deploy to Cloudflare Pages ───────────────────────────
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: conflict-ledger
+          directory: .
+          # Branch previews: PRs get a unique preview URL automatically
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          wranglerVersion: '3'
+
+  # ── Lighthouse CI — check performance & accessibility ────────
+  lighthouse:
+    name: Lighthouse Audit
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli@0.13.x
+
+      - name: Run Lighthouse
+        run: |
+          lhci autorun \
+            --upload.target=temporary-public-storage \
+            --collect.url=https://conflict-ledger.com \
+            --assert.preset=lighthouse:recommended \
+            --assert.assertions.categories:performance=warn \
+            --assert.assertions.categories:accessibility=error \
+            --assert.assertions.categories:best-practices=warn
+        continue-on-error: true  # Don't fail deploy on Lighthouse warnings
