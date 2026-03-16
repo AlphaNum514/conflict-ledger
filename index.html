@@ -1336,6 +1336,97 @@ footer {
 @media (max-width: 600px) {
   .article-sidebar { display: none; }
 }
+
+/* ═══════════════════════════════════════════════════════
+   MOBILE LAYOUT FIXES — collapse all multi-column grids
+   ═══════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  /* Fix the main 340px sidebar split */
+  .article-body { grid-template-columns: 1fr !important; gap: 24px !important; }
+  
+  /* Masthead collapse */
+  .masthead-inner { grid-template-columns: 1fr !important; text-align: center; gap: 6px; }
+  .mh-meta.r { display: none; }
+  
+  /* Two-col grids → single col */
+  .cs-body { grid-template-columns: 1fr !important; }
+  .dual-chart { grid-template-columns: 1fr !important; }
+  .dual-panel { grid-template-columns: 1fr 1fr !important; }
+  .footer-inner { flex-direction: column !important; gap: 16px !important; }
+  .method-grid { grid-template-columns: 1fr !important; }
+  
+  /* Fix article padding */
+  .article-wrap { padding: 0 16px 48px !important; }
+  
+  /* Ticker hide on very small */
+  .ticker-wrap { display: none; }
+  
+  /* Key findings grid */
+  .kf-grid { grid-template-columns: 1fr 1fr !important; }
+}
+
+@media (max-width: 600px) {
+  .article-body { grid-template-columns: 1fr !important; }
+  .dual-panel { grid-template-columns: 1fr !important; }
+  .kf-grid { grid-template-columns: 1fr 1fr !important; }
+  .masthead { padding: 10px 14px; }
+  
+  /* Make callouts full width and visible */
+  .inline-callout { margin: 16px 0; }
+  .inline-callout-text { font-size: 15px; }
+  
+  /* Stat callout */
+  .stat-callout { padding: 12px; }
+  .stat-callout-num { font-size: 26px; }
+}
+
+@media (max-width: 480px) {
+  .kf-grid { grid-template-columns: 1fr !important; }
+  .dual-panel { grid-template-columns: 1fr !important; }
+  .scenario-grid { grid-template-columns: 1fr !important; }
+}
+
+/* ── ENHANCED CALLOUT VISIBILITY ── */
+.inline-callout {
+  margin: 32px 0 !important;
+  padding: 22px 26px !important;
+}
+.inline-callout-text {
+  font-size: 19px !important;
+}
+
+/* Stat grid between sections */
+.section-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  margin: 28px 0 36px;
+}
+.section-stat-grid .stat-cell {
+  background: var(--surface);
+  padding: 20px 16px;
+  text-align: center;
+}
+.section-stat-grid .stat-cell .num {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 30px;
+  line-height: 1;
+  display: block;
+  margin-bottom: 6px;
+}
+.section-stat-grid .stat-cell .lbl {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: .1em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+@media (max-width: 600px) {
+  .section-stat-grid { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>
@@ -1346,7 +1437,7 @@ footer {
 
 <!-- SWITCHER BAR -->
 <div id="sw-bar">
-  <span class="sw-logo">THE CONFLICT LEDGER</span>
+  <span class="sw-logo">THE CONFLICT LEDGER <span style="background:#d42b2b;color:#fff;font-size:8px;padding:1px 6px;margin-left:6px;letter-spacing:.1em;">v2.0</span></span>
   <div class="sw-tabs">
     <button class="sw-tab sw-active" id="tab-simple"   onclick="switchView('simple')">
       Public Edition <span class="sw-badge">Overview</span>
@@ -1912,18 +2003,18 @@ footer {
 
   <!-- THE MARKET -->
   
-  <div class="reveal" style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);margin:24px 0 32px;">
-    <div style="background:var(--surface);padding:18px 16px;text-align:center;">
-      <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:var(--green);display:block;line-height:1;">+94%</span>
-      <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:.1em;">Rheinmetall YTD 2025</span>
+  <div class="section-stat-grid reveal">
+    <div class="stat-cell">
+      <span class="num" style="color:var(--green)">+94%</span>
+      <span class="lbl">Rheinmetall YTD 2025</span>
     </div>
-    <div style="background:var(--surface);padding:18px 16px;text-align:center;">
-      <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:var(--green);display:block;line-height:1;">+66pp</span>
-      <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:.1em;">Defense vs S&P 500</span>
+    <div class="stat-cell">
+      <span class="num" style="color:var(--green)">+66pp</span>
+      <span class="lbl">Defense vs S&amp;P 500</span>
     </div>
-    <div style="background:var(--surface);padding:18px 16px;text-align:center;">
-      <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:var(--red);display:block;line-height:1;">$0</span>
-      <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:.1em;">Deaths on balance sheet</span>
+    <div class="stat-cell">
+      <span class="num" style="color:var(--red)">$0</span>
+      <span class="lbl">Deaths on any balance sheet</span>
     </div>
   </div>
 
