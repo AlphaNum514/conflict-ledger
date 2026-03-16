@@ -1183,6 +1183,159 @@ footer {
   .kf-grid { grid-template-columns: 1fr !important; }
   .dual-panel { grid-template-columns: 1fr !important; }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   VISUAL ILLUSTRATION SYSTEM
+   Pull quotes, stat callouts, margin notes, data highlights
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Article grid: prose + sidebar ── */
+.article-with-sidebar {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 0 40px;
+  align-items: start;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.article-sidebar {
+  position: sticky;
+  top: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ── Pull Quote ── */
+.pull-quote {
+  border-left: 3px solid var(--red);
+  padding: 16px 0 16px 18px;
+  margin: 0;
+}
+.pull-quote p {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--navy);
+  font-style: italic;
+  margin-bottom: 8px;
+}
+.pull-quote cite {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-style: normal;
+}
+
+/* ── Stat Callout ── */
+.stat-callout {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 16px;
+}
+.stat-callout-num {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 32px;
+  line-height: 1;
+  margin-bottom: 4px;
+  display: block;
+}
+.stat-callout-num.pos { color: var(--green); }
+.stat-callout-num.neg { color: var(--red); }
+.stat-callout-num.neu { color: var(--navy); }
+.stat-callout-label {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+  display: block;
+}
+.stat-callout-src {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8px;
+  color: var(--muted2);
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  display: block;
+  letter-spacing: .06em;
+}
+
+/* ── Inline Pull Quote (inside prose, full width) ── */
+.inline-callout {
+  margin: 28px 0;
+  padding: 20px 24px;
+  border-left: 4px solid var(--navy);
+  background: var(--surface2);
+}
+.inline-callout-text {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 1.4;
+  color: var(--navy);
+  margin-bottom: 6px;
+}
+.inline-callout-sub {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ── Data Bar (inline, visual emphasis) ── */
+.data-bar-inline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.data-bar-inline:last-child { border-bottom: none; }
+.dbi-label { font-size: 12px; color: var(--muted); min-width: 120px; flex-shrink: 0; }
+.dbi-track { flex: 1; height: 6px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+.dbi-fill { height: 100%; border-radius: 2px; transition: width 1.2s cubic-bezier(.4,0,.2,1); }
+.dbi-fill.pos { background: var(--green); }
+.dbi-fill.neg { background: var(--red); }
+.dbi-val { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600; min-width: 48px; text-align: right; }
+.dbi-val.pos { color: var(--green); }
+.dbi-val.neg { color: var(--red); }
+
+/* ── Margin Note (small aside) ── */
+.margin-note {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--amber);
+  padding: 12px 14px;
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.margin-note strong { color: var(--navy); font-size: 9px; letter-spacing: .16em; text-transform: uppercase; display: block; margin-bottom: 6px; font-family: 'IBM Plex Mono', monospace; }
+
+/* ── Mobile: sidebar collapses ── */
+@media (max-width: 900px) {
+  .article-with-sidebar {
+    grid-template-columns: 1fr;
+  }
+  .article-sidebar {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .article-sidebar > * {
+    flex: 1 1 200px;
+    min-width: 160px;
+  }
+}
+@media (max-width: 600px) {
+  .article-sidebar { display: none; }
+}
 </style>
 </head>
 <body>
@@ -1312,6 +1465,11 @@ footer {
     <div class="explain-block s-reveal">
       <p>Here's the basic mechanism: when countries go to war, they order more weapons. Defense companies fulfill those orders. Their revenues go up, and their stock prices follow. <strong>This is not corruption — it is the normal functioning of the market.</strong> The companies don't start the wars. They just make what governments ask them to make.</p>
       <p>But there's an asymmetry that matters. The cost of fighting a war is paid by the public — through taxes, through higher prices, through casualties. The profit from supplying that war is collected by a small number of private companies and their shareholders. <span class="highlight">Losses are shared. Gains are private.</span></p>
+
+    <div class="inline-callout reveal" style="border-left-color:var(--red);">
+      <div class="inline-callout-text" style="color:var(--red);">The cost of war is paid by the many. The profit of war is collected by the few.</div>
+      <div class="inline-callout-sub">This structural asymmetry is documented throughout this report</div>
+    </div>
     </div>
 
     <!-- SECTOR BAR CHART — simplified -->
@@ -1683,6 +1841,14 @@ footer {
   <div id="analysis" class="prose reveal">
     <p class="lead">Defense stocks have outperformed the broader market by 66 percentage points since Russia's invasion of Ukraine in February 2022, according to Bloomberg data analyzed by The Conflict Ledger. Global military expenditure reached a record $2.4 trillion in 2025 — the ninth consecutive annual increase, according to SIPRI, the Stockholm International Peace Research Institute. At the same time, an estimated 580,000 people have died in active conflicts since 2022, 84% of them civilians, according to UN and ACLED data.</p>
 
+    <div class="reveal" style="margin:20px 0;border:1px solid var(--border);padding:16px 20px;background:var(--surface2);">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;">Human Cost at a Glance · 2022–2025</div>
+      <div class="data-bar-inline"><span class="dbi-label">Conflict deaths</span><div class="dbi-track"><div class="dbi-fill neg" style="width:0%" data-pct="58"></div></div><span class="dbi-val neg">580K+</span></div>
+      <div class="data-bar-inline"><span class="dbi-label">Civilian share</span><div class="dbi-track"><div class="dbi-fill neg" style="width:0%" data-pct="84"></div></div><span class="dbi-val neg">84%</span></div>
+      <div class="data-bar-inline"><span class="dbi-label">Displaced (M)</span><div class="dbi-track"><div class="dbi-fill neg" style="width:0%" data-pct="100"></div></div><span class="dbi-val neg">117M</span></div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--muted2);margin-top:10px;">ACLED · UNOCHA · UNHCR · Cumulative estimate Dec 2025</div>
+    </div>
+
     <p>This analysis examines the structural economic mechanisms that link armed conflict to corporate financial returns — and asks a question that standard financial reporting rarely poses: what is the relationship between the returns documented in the first paragraph and the deaths documented in the second?</p>
 
     <p>The answer is not simple, and this report does not pretend otherwise. Defense spending serves legitimate security functions. Many of the companies examined here produce systems that have demonstrably deterred conflict escalation. The relationship between military procurement and human welfare is contested, empirically complex, and deeply dependent on context. <strong>This analysis documents the financial patterns without claiming those patterns are straightforwardly good or bad.</strong> It insists, however, that they be examined together.</p>
@@ -1745,7 +1911,23 @@ footer {
   </div>
 
   <!-- THE MARKET -->
-  <h2 class="section-hed reveal">What the Market Shows</h2>
+  
+  <div class="reveal" style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);margin:24px 0 32px;">
+    <div style="background:var(--surface);padding:18px 16px;text-align:center;">
+      <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:var(--green);display:block;line-height:1;">+94%</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:.1em;">Rheinmetall YTD 2025</span>
+    </div>
+    <div style="background:var(--surface);padding:18px 16px;text-align:center;">
+      <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:var(--green);display:block;line-height:1;">+66pp</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:.1em;">Defense vs S&P 500</span>
+    </div>
+    <div style="background:var(--surface);padding:18px 16px;text-align:center;">
+      <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:var(--red);display:block;line-height:1;">$0</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:.1em;">Deaths on balance sheet</span>
+    </div>
+  </div>
+
+<h2 class="section-hed reveal">What the Market Shows</h2>
   <div class="prose reveal">
     <p style="font-size:13px;color:var(--muted);border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:18px;font-style:italic;">This section examines how armed conflict since 2022 has been reflected in the performance of specific equity sectors — and what industry, academic, and policy voices say about those patterns.</p>
     <p>The financial performance of major defense contractors since February 2022 has been, by most conventional metrics, exceptional. Rheinmetall AG — Germany's largest defense manufacturer and a primary beneficiary of Europe's rearmament — saw its stock price increase by approximately 94% in the twelve months following the Ukraine invasion, and has continued to outperform. Lockheed Martin, Northrop Grumman, BAE Systems, and Raytheon Technologies (now RTX) have each generated returns substantially above the S&P 500 benchmark over the same period.</p>
@@ -1945,6 +2127,11 @@ footer {
       <div class="cs-col">
         <p>Germany's €100 billion Sondervermögen — a constitutionally designated off-budget special fund — reversed a defense spending doctrine maintained since reunification. European defense primes entered a sustained surge-capacity period. <strong>Rheinmetall's order backlog exceeded €20 billion by Q1 2025</strong>, according to its annual report, representing multi-year guaranteed revenue.</p>
         <p>The distributional effects are stark. Ukraine's GDP contracted by an estimated 29% in 2022, according to the World Bank. Infrastructure damage is assessed at $486 billion as of March 2024, a joint estimate by the World Bank, European Commission, and United Nations. The companies contracted to supply weapons to Ukraine reported record earnings. <strong>Both facts are true simultaneously.</strong></p>
+
+    <div class="inline-callout reveal">
+      <div class="inline-callout-text">"The same conflict that destroyed one economy built record earnings in another. Both happened simultaneously."</div>
+      <div class="inline-callout-sub">Ukraine GDP −29% · Rheinmetall backlog +€20B · 2022–2025</div>
+    </div>
         <p>Agricultural commodity markets felt the impact globally. Ukraine and Russia together account for approximately 28–30% of global wheat exports. Supply disruptions were identified as a primary driver of food price inflation affecting an estimated 45 import-dependent countries, with acute humanitarian impact in North Africa and Sub-Saharan Africa, according to the World Food Programme.<sup class="fn" onclick="scrollToFn(8)">[8]</sup></p>
         <div class="cs-metrics">
           <div class="cs-m"><div class="cs-m-val pos">+94%</div><div class="cs-m-label">Rheinmetall YTD 2025</div><div class="cs-m-src">Bloomberg; Rheinmetall Annual Report 2025</div></div>
@@ -2497,6 +2684,18 @@ function showScenario(name) {
 
   document.getElementById('sc-output').classList.add('s-show');
 }
+
+
+/* ── DATA BAR INLINE OBSERVER ── */
+var dbiObs = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e) {
+    if (!e.isIntersecting) return;
+    var pct = e.target.getAttribute('data-pct');
+    if (pct) e.target.style.width = pct + '%';
+    dbiObs.unobserve(e.target);
+  });
+}, {threshold: 0.3});
+document.querySelectorAll('.dbi-fill').forEach(function(el) { dbiObs.observe(el); });
 
 /* expose to HTML onclick */
 window.showScenario = showScenario;
