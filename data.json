@@ -1,0 +1,105 @@
+{
+  "_meta": {
+    "title": "The Conflict Ledger — Data",
+    "description": "All chart data, scenario definitions, and sector performance data",
+    "dataPeriod": "Jan 2022 – Q1 2026",
+    "lastUpdated": "March 2026",
+    "sources": {
+      "equity": "Bloomberg terminal / SEC public filings, YTD Q1 2026",
+      "defense_spend": "SIPRI Military Expenditure Database, April 2025",
+      "displacement": "UNHCR Global Trends Report, June 2024",
+      "fatalities": "ACLED / UNOCHA cumulative estimate, December 2025",
+      "regional_blocs": "SIPRI 2025 edition"
+    }
+  },
+
+  "keyFindings": {
+    "outperformance_pp": 66,
+    "global_defense_spend_T": 2.4,
+    "conflict_deaths_K": 580,
+    "displaced_M": 117,
+    "civilian_pct": 84
+  },
+
+  "defenseContractors": {
+    "labels": ["LMT", "RTX", "NOC", "BA", "Rheinmetall", "BAE Systems", "S&P 500"],
+    "ytdReturns": [88, 74, 67, 59, 94, 71, 18],
+    "colors": {
+      "dark": ["#5090d0","#e05060","#d4a030","#a0aabb","#3aaa66","#304050","#607080"],
+      "light": ["#1a4a8a","#c8102e","#9a6800","#6b6560","#1a6b3a","#c4bfb0","#405060"]
+    }
+  },
+
+  "sectors": {
+    "labels": [
+      "Private Security / PMC",
+      "Aerospace & Defense",
+      "Agri. Commodities",
+      "Energy (Oil & Gas)",
+      "Gold / Safe-Haven",
+      "Maritime Insurance",
+      "Civilian Consumer Goods",
+      "Tourism & Hospitality"
+    ],
+    "ytdReturns": [44.6, 32.4, 22.1, 18.7, 14.2, 9.3, -4.1, -11.8],
+    "correlations": [0.95, 0.91, 0.83, 0.72, 0.61, 0.54, -0.38, -0.67],
+    "riskProfiles": ["LOW","LOW","MEDIUM","MEDIUM","LOW","MEDIUM","HIGH","VERY HIGH"],
+    "source": "Bloomberg / SEC filings · YTD Q1 2026 · Not investment advice"
+  },
+
+  "regionalSpend": {
+    "labels": ["USA", "China", "EU/NATO", "Russia", "Indo-Pac.", "Other"],
+    "values": [916, 296, 380, 109, 142, 157],
+    "unit": "USD billions",
+    "total": 2400,
+    "source": "SIPRI Military Expenditure Database · 2025 edition"
+  },
+
+  "scenarios": {
+    "bull": {
+      "id": "bull",
+      "label": "Escalation",
+      "icon": "📈",
+      "title": "Scenario: Escalation",
+      "description": "Conflicts intensify or expand. More countries rearm. Defense spending keeps climbing. Pattern based on 2022–2023 escalation data.",
+      "defense": "Strong further gains",
+      "spend": "$2.7–2.9 trillion",
+      "oil": "$90–120/barrel",
+      "recon": "Very low demand",
+      "human": "Worsening significantly",
+      "note": "Based on 2022–2023 market behavior during active escalation phases. Defense stocks historically outperform strongly in this environment, but the human and fiscal costs also escalate. Note: high defense multiples today mean some upside may already be priced in."
+    },
+    "base": {
+      "id": "base",
+      "label": "Status Quo",
+      "icon": "📊",
+      "title": "Scenario: Status Quo",
+      "description": "Current conflicts continue at similar intensity. Consistent with 2024–2025 SIPRI/NATO trajectory.",
+      "defense": "Moderate gains likely",
+      "spend": "$2.5–2.6 trillion",
+      "oil": "$70–85/barrel",
+      "recon": "Low demand",
+      "human": "Remains critical",
+      "note": "Status quo assumes current conflicts persist at roughly current intensity. Defense budgets continue growing at 4–6% annually. Commodity premiums stabilize at elevated levels. The most likely near-term path based on current trajectory."
+    },
+    "bear": {
+      "id": "bear",
+      "label": "De-escalation",
+      "icon": "🕊",
+      "title": "Scenario: De-escalation",
+      "description": "Ukraine ceasefire. Diplomatic progress in Middle East. Defense stocks fall. Based on post-Cold War and post-Iraq 2003 drawdown patterns.",
+      "defense": "Multiple compression likely",
+      "spend": "$2.2–2.4 trillion",
+      "oil": "$55–70/barrel",
+      "recon": "Strong demand (rebuilding)",
+      "human": "Improving, slowly",
+      "note": "Based on post-Cold War (1991) and post-Iraq (2003) drawdown patterns. Defense stocks would likely fall sharply — current valuations price in continued conflict. The reconstruction sector (infrastructure, housing) would see significant new demand."
+    }
+  },
+
+  "calculatorPresets": {
+    "escalation":   { "defense": 30, "alloc": 35, "intensity": 90, "oil": 18 },
+    "base":         { "defense": 10, "alloc": 20, "intensity": 70, "oil": 5  },
+    "deescalation": { "defense": -5, "alloc": 10, "intensity": 30, "oil": -5 }
+  }
+}

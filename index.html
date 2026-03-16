@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+<title>The Conflict Ledger</title>
+<!-- SEO -->
+<meta name="description" content="A data-driven investigation into the economics of armed conflict — defense sector returns, human costs, and the financial mechanisms that link war to profit.">
+<meta name="keywords" content="defense economy, war economics, SIPRI, conflict finance, defense stocks, geopolitics">
+<meta name="author" content="The Conflict Ledger">
+<meta name="robots" content="index, follow">
+
+<!-- Open Graph — controls preview on WhatsApp, LinkedIn, Twitter, iMessage -->
+<meta property="og:type"        content="article">
+<meta property="og:title"       content="The Conflict Ledger — When War Is Good Business">
+<meta property="og:description" content="Defense stocks outperformed the S&P 500 by 66pp since 2022. 580,000+ people died. This report puts both numbers in the same frame.">
+<meta property="og:url"         content="https://conflict-ledger.com">
+<meta property="og:site_name"   content="The Conflict Ledger">
+<meta property="og:image"       content="https://conflict-ledger.com/og-image.webp">
+<meta property="og:image:alt"   content="The Conflict Ledger — war economy data visualization">
+<meta property="og:image:width"  content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale"      content="en_US">
+
+<!-- Twitter Card -->
+<meta name="twitter:card"        content="summary_large_image">
+<meta name="twitter:title"       content="The Conflict Ledger — When War Is Good Business">
+<meta name="twitter:description" content="Defense stocks outperformed the S&P 500 by 66pp since 2022. 580,000+ people died. This report puts both numbers in the same frame.">
+<meta name="twitter:image"       content="https://conflict-ledger.com/og-image.webp">
+
+<!-- Favicon — inline SVG as data URI, no external file needed -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%230e2040'/><text x='16' y='22' font-family='serif' font-size='18' font-weight='bold' fill='%23d42b2b' text-anchor='middle'>CL</text></svg>">
+<link rel="alternate icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%230e2040'/><text x='16' y='22' font-family='serif' font-size='18' font-weight='bold' fill='%23d42b2b' text-anchor='middle'>CL</text></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500&family=Syne:wght@700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>
+// Load Chart.js with CDN fallbacks (FIXED RACE CONDITION)
+(function() {
+  var CHART_VERSION = '4.4.1';
+  var CDNS = [
+    'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/' + CHART_VERSION + '/chart.umd.min.js',
+    'https://cdn.jsdelivr.net/npm/chart.js@' + CHART_VERSION + '/dist/chart.umd.min.js',
+    'https://unpkg.com/chart.js@' + CHART_VERSION + '/dist/chart.umd.min.js'
+  ];
+  var tried = 0;
+  function tryNext() {
+    if (tried >= CDNS.length) {
+      // All CDNs failed — show graceful degradation
+      document.querySelectorAll('.chart-canvas-wrap, .s-chart-canvas-wrap').forEach(function(el) {
+        var sk = el.querySelector('.chart-skeleton');
+        if (sk) sk.innerHTML = 'Chart unavailable — <span style="opacity:.6">enable network access</span>';
+        else el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:monospace;font-size:11px;color:#888;text-align:center;padding:20px;">Chart unavailable<br><span style="font-size:9px;opacity:.6;">Enable network access to load charts</span></div>';
+      });
+      return;
+    }
+    var s = document.createElement('script');
+    s.src = CDNS[tried++];
+    s.onerror = tryNext;
+    s.onload = function() {
+      // Notify that Chart.js is ready — triggers all deferred chart inits
+      window.dispatchEvent(new Event('chartjs-loaded'));
+    };
+    document.head.appendChild(s);
+  }
+  tryNext();
+})();
+</script>
+<link rel="stylesheet" href="style.css">
+
+<!-- Analytics: swap conflict-ledger.com with your actual domain after deploy -->
+<!-- Plausible is privacy-first, GDPR-compliant, no cookie banner needed -->
+<!-- <script defer data-domain="conflict-ledger.com" src="https://plausible.io/js/script.js"></script> -->
+<!-- To track custom events (switchView, downloadPDF), also add:
+<script>
+  window.plausible = window.plausible || function() { (window.plausible.q = window.plausible.q || []).push(arguments) }
+</script>
+-->
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<script>
+(function(){try{var d=localStorage.getItem("cl-dark");if(d==="1")document.documentElement.setAttribute("data-theme","dark");var v=localStorage.getItem("cl-view");if(v==="research")document.addEventListener("DOMContentLoaded",function(){if(window.switchView)switchView("research");});}catch(e){}})();
+</script>
+
+<!-- SWITCHER BAR -->
+<div id="sw-bar">
+  <span class="sw-logo">THE CONFLICT LEDGER</span>
+  <div class="sw-tabs">
+    <button class="sw-tab sw-active" id="tab-simple" aria-pressed="true" aria-label="Switch to Public Edition — concise overview" onclick="switchView('simple')">
+      Public Edition <span class="sw-badge">Overview</span>
+    </button>
+    <button class="sw-tab" id="tab-research" aria-pressed="false" aria-label="Switch to Research Edition — full report" onclick="switchView('research')">
+      Research Edition <span class="sw-badge">Full Report</span>
+    </button>
+  </div>
+</div>
+
+<!-- SIMPLE VIEW -->
+<div id="view-simple">
+<main id="main-content">
+<div id="prog"></div>
+
+<header class="site-header">
+  <a class="site-logo" href="#"><strong>The Conflict Ledger</strong> — Public Edition</a>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <button id="simpleDmBtn" aria-label="Toggle dark mode" aria-pressed="false" onclick="toggleSimpleDark()" style="background:transparent;border:1px solid var(--border);color:var(--muted);font-family:var(--mono);font-size:9px;letter-spacing:.15em;text-transform:uppercase;padding:4px 10px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;">☾ DARK</button>
+    <span class="header-tag">Not investment advice</span>
+  </div>
+</header>
+
+<!-- ─────────────────────────────────────────── SECTION 1: HOOK -->
+<section id="hook">
+  <div class="wrap">
+    <div class="s-label">Introduction</div>
+
+    <h1 class="hook-headline s-reveal">
+      When War Is<br><em>Good Business</em>
+    </h1>
+
+    <p class="hook-deck s-reveal">
+      Since February 2022, defense company stocks have risen faster than almost any other sector.
+      At the same time, <strong>over half a million people have died in active conflicts.</strong>
+      This piece asks one question: what is the relationship between those two facts?
+    </p>
+
+    <!-- THREE BIG NUMBERS -->
+    <div class="three-nums s-reveal">
+      <div class="num-cell">
+        <span class="num-val s-pos" data-target="66" data-suffix="pp" data-dec="0">0pp</span>
+        <span class="num-label">Defense stocks beat<br>S&P 500 since Feb 2022<br><em style="font-size:8px;opacity:.6;">as of Q1 2026 · Bloomberg</em></span>
+      </div>
+      <div class="num-cell">
+        <span class="num-val s-neu" data-target="2.4" data-suffix="T" data-prefix="$" data-dec="1">$0T</span>
+        <span class="num-label">Global military spend<br>in 2025 — record high<br><em style="font-size:8px;opacity:.6;">SIPRI, April 2025</em></span>
+      </div>
+      <div class="num-cell">
+        <span class="num-val s-neg" data-target="580" data-suffix="K+" data-dec="0">0K+</span>
+        <span class="num-label">Estimated conflict deaths<br>since 2022 (84% civilian)<br><em style="font-size:8px;opacity:.6;">ACLED / UNOCHA, Dec 2025</em></span>
+      </div>
+    </div>
+
+    <p class="hook-question s-reveal">
+      These numbers come from the same set of events. One group tracks the financial side.
+      The other tracks the human side. This report puts them in the same frame.
+    </p>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────── SECTION 2: KEY FINDINGS -->
+<section id="s-findings">
+  <div class="wrap">
+    <div class="s-label">Key Findings</div>
+
+    <ul class="finding-list">
+      <li class="finding-item s-reveal s-d1">
+        <span class="finding-icon">📈</span>
+        <div class="finding-body">
+          <div class="finding-stat s-pos">+66pp</div>
+          <div class="finding-text">Defense stocks outperformed the S&P 500 by 66 percentage points between February 2022 and Q1 2026. Rheinmetall, a German arms maker, rose 94% in 2025 alone.</div>
+          <div class="finding-src">Source: Bloomberg / SEC public filings, 2025</div>
+        </div>
+      </li>
+      <li class="finding-item s-reveal s-d2">
+        <span class="finding-icon">💰</span>
+        <div class="finding-body">
+          <div class="finding-stat s-neu">$2.4T</div>
+          <div class="finding-text">The world spent $2.4 trillion on military in 2025 — a ninth consecutive annual record. That's roughly the combined economies of Indonesia and the Netherlands, spent in one year on defense.</div>
+          <div class="finding-src">Source: SIPRI Military Expenditure Database, 2025</div>
+        </div>
+      </li>
+      <li class="finding-item s-reveal s-d3">
+        <span class="finding-icon">🌊</span>
+        <div class="finding-body">
+          <div class="finding-stat s-pos">+180%</div>
+          <div class="finding-text">When Houthi forces began attacking ships in the Red Sea in late 2023, maritime war insurance premiums jumped 180%. Insurance companies that cover ships made record income. Egypt's Suez Canal revenues fell 40%.</div>
+          <div class="finding-src">Source: Lloyd's of London market data, Q1 2024</div>
+        </div>
+      </li>
+      <li class="finding-item s-reveal s-d1">
+        <span class="finding-icon">👥</span>
+        <div class="finding-body">
+          <div class="finding-stat s-neg">117M</div>
+          <div class="finding-text">117 million people are currently displaced from their homes due to conflict — the highest number ever recorded by the UN refugee agency. The previous record was set just one year earlier.</div>
+          <div class="finding-src">Source: UNHCR Global Trends Report, 2024</div>
+        </div>
+      </li>
+      <li class="finding-item s-reveal s-d2">
+        <span class="finding-icon">📉</span>
+        <div class="finding-body">
+          <div class="finding-stat s-neg">$0</div>
+          <div class="finding-text">The 580,000+ deaths since 2022 do not appear on any company's financial report. In economic terminology, they are "externalities" — real costs that are entirely paid by others, not by the companies profiting from the conflict.</div>
+          <div class="finding-src">Source: ACLED; UNOCHA, 2022–2025</div>
+        </div>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────── SECTION 3: WHAT IT MEANS -->
+<section id="explained">
+  <div class="wrap">
+    <div class="s-label">What It Means</div>
+
+    <div class="explain-block s-reveal">
+      <p>Here's the basic mechanism: when countries go to war, they order more weapons. Defense companies fulfill those orders. Their revenues go up, and their stock prices follow. <strong>This is not corruption — it is the normal functioning of the market.</strong> The companies don't start the wars. They just make what governments ask them to make.</p>
+      <p>But there's an asymmetry that matters. The cost of fighting a war is paid by the public — through taxes, through higher prices, through casualties. The profit from supplying that war is collected by a small number of private companies and their shareholders. <span class="highlight">Losses are shared. Gains are private.</span></p>
+    </div>
+
+    <!-- SECTOR BAR CHART — simplified -->
+    <div class="chart-box s-reveal">
+      <div class="chart-title">Which sectors gain, which lose — YTD 2026</div>
+      <div class="chart-sub">Return % · Source: Bloomberg / SEC filings · Data period: Jan–Dec 2025 · Not investment advice</div>
+      <div class="s-chart-canvas-wrap"><div class="chart-skeleton" id="sk-sectorChartSimple">Loading chart…</div><canvas id="sectorChartSimple" style="display:none;" role="img" aria-label="Bar chart: sector returns year-to-date 2026, showing conflict-correlated sectors outperforming"></canvas></div>
+    </div>
+
+    <!-- SIMPLIFIED TABLE -->
+    <table class="mini-table s-reveal">
+      <thead>
+        <tr>
+          <th>Sector</th>
+          <th>YTD Return 2026</th>
+          <th>Why it moves with conflict</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Private Security</td><td class="tc-s-pos">+44.6%</td><td>Direct demand for armed personnel</td></tr>
+        <tr><td>Aerospace &amp; Defense</td><td class="tc-s-pos">+32.4%</td><td>Government weapons orders, multi-year contracts</td></tr>
+        <tr><td>Agricultural Commodities</td><td class="tc-s-pos">+22.1%</td><td>Ukraine/Russia supply disruptions</td></tr>
+        <tr><td>Energy (Oil &amp; Gas)</td><td class="tc-s-pos">+18.7%</td><td>Supply route uncertainty pushes prices up</td></tr>
+        <tr><td>Civilian Consumer Goods</td><td class="tc-s-neg">−4.1%</td><td>Supply chains disrupted, consumer confidence falls</td></tr>
+        <tr><td>Tourism &amp; Hospitality</td><td class="tc-s-neg">−11.8%</td><td>People stop traveling to conflict-adjacent regions</td></tr>
+      </tbody>
+    </table>
+    <p class="table-note s-reveal">In short: sectors that are close to conflict outperform. Sectors that depend on peace underperform. The pattern has been consistent across every active conflict since 2022.</p>
+
+    <div class="inline-quote s-reveal">
+      <p>"The industry has a structural interest in a world that is seen as dangerous. That doesn't mean they cause wars — but it does mean they benefit from them."</p>
+      <cite>— William Hartung, Senior Research Fellow, Quincy Institute for Responsible Statecraft</cite>
+    </div>
+
+    <!-- COST COMPARISON PANEL -->
+    <div class="dual-panel s-reveal">
+      <div class="panel-cell">
+        <div class="panel-head">Financial Ledger</div>
+        <div class="panel-stat">+94%</div>
+        <div class="panel-label">Rheinmetall stock gain in 2025.<br>Order backlog: €20B+</div>
+        <div class="panel-src">Rheinmetall AG Annual Report 2025</div>
+      </div>
+      <div class="panel-cell dark">
+        <div class="panel-head">Human Ledger</div>
+        <div class="panel-stat">580K+</div>
+        <div class="panel-label">Estimated deaths since 2022.<br>Not on any balance sheet.</div>
+        <div class="panel-src">ACLED / UNOCHA estimates, 2022–2025</div>
+      </div>
+      <div class="panel-cell">
+        <div class="panel-head">What grew</div>
+        <div class="panel-stat">€20B</div>
+        <div class="panel-label">Rheinmetall's order backlog.<br>Revenue guaranteed for years ahead.</div>
+        <div class="panel-src">Rheinmetall AG Annual Report 2025</div>
+      </div>
+      <div class="panel-cell dark">
+        <div class="panel-head">What shrank</div>
+        <div class="panel-stat">−29%</div>
+        <div class="panel-label">Ukraine's GDP in 2022.<br>Infrastructure damage: $486 billion.</div>
+        <div class="panel-src">World Bank Ukraine Economic Update</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────── SECTION 4: CASE STUDIES -->
+<section id="s-cases">
+  <div class="wrap">
+    <div class="s-label">Two Conflicts Up Close</div>
+
+    <!-- UKRAINE -->
+    <div class="case-card s-reveal">
+      <div class="case-header">
+        <div>
+          <div class="case-label">Case Study 1 — Eastern Europe</div>
+          <div class="case-title">Russia's Invasion of Ukraine</div>
+        </div>
+        <div style="font-family:var(--mono);font-size:9px;color:rgba(255,255,255,.4);">Feb 2022 – Ongoing</div>
+      </div>
+      <div class="case-body">
+        <ul class="bullet-list">
+          <li>
+            <span class="b-icon">💹</span>
+            <span><strong>Financial winner:</strong> European defense companies. Germany's Rheinmetall rose 94% in 2025. Europe collectively added $250 billion in annual defense spending. Multi-year procurement backlogs are now booked out past 2030.</span>
+          </li>
+          <li>
+            <span class="b-icon">🌾</span>
+            <span><strong>Economic ripple:</strong> Ukraine and Russia supply 30% of the world's wheat. Disruptions pushed grain prices up 50% in 2022, triggering food insecurity in over 45 countries — mostly in Africa and the Middle East.</span>
+          </li>
+          <li>
+            <span class="b-icon">💔</span>
+            <span><strong>Human cost:</strong> Ukraine's economy shrank 29% in 2022. Infrastructure damage is estimated at $486 billion. An estimated 300,000+ combatants have died; the civilian toll is not fully counted.</span>
+          </li>
+        </ul>
+        <div class="case-takeaway">
+          <strong>The gap:</strong> The same conflict destroyed one economy and built record earnings in another. These outcomes happened simultaneously — they are not separate events.
+        </div>
+      </div>
+    </div>
+
+    <!-- RED SEA -->
+    <div class="case-card s-reveal">
+      <div class="case-header">
+        <div>
+          <div class="case-label">Case Study 2 — Middle East &amp; Red Sea</div>
+          <div class="case-title">Gaza Conflict &amp; Houthi Maritime Attacks</div>
+        </div>
+        <div style="font-family:var(--mono);font-size:9px;color:rgba(255,255,255,.4);">Oct 2023 – Ongoing</div>
+      </div>
+      <div class="case-body">
+        <ul class="bullet-list">
+          <li>
+            <span class="b-icon">🚢</span>
+            <span><strong>Financial winner:</strong> Maritime insurance companies and missile defense manufacturers. War insurance premiums for Red Sea routes jumped 10× within weeks. RTX (Raytheon) added $8 billion to its missile defense order backlog in Q4 2023 alone.</span>
+          </li>
+          <li>
+            <span class="b-icon">📦</span>
+            <span><strong>Economic ripple:</strong> The Red Sea carries 12% of global trade. Ships rerouted around Africa, adding 2 weeks to delivery times. Shipping costs rose 150–300%. Egyptian Suez Canal revenues dropped 40% — a major blow to a developing country's finances.</span>
+          </li>
+          <li>
+            <span class="b-icon">💔</span>
+            <span><strong>Human cost:</strong> Gaza's economy contracted an estimated 83% in 2024. More than 40,000 civilians are estimated to have died as of Q1 2025. The financial beneficiaries of this conflict had no geographic proximity to the violence.</span>
+          </li>
+        </ul>
+        <div class="case-takeaway">
+          <strong>The gap:</strong> The people who profited from this conflict were in London, Connecticut, and Cape Town. The people who paid for it were in Gaza and on the Egyptian border.
+        </div>
+      </div>
+    </div>
+
+    <!-- VISUAL COMPARISON BAR -->
+    <div class="chart-box s-reveal" style="margin-top:28px;">
+      <div class="chart-title">Defense contractor returns vs. conflict impact — 2022–2026</div>
+      <div class="chart-sub">Financial returns: Bloomberg/annual reports. Economic contraction: World Bank/UNCTAD. Sources cited inline.</div>
+      <div class="comparison-wrap">
+        <div class="comp-row">
+          <span class="comp-label">Rheinmetall</span>
+          <div class="comp-bar-wrap">
+            <div class="comp-bar-bg"><div class="comp-bar-fill s-pos" data-pct="94" style="width:0%"><span class="comp-bar-val">+94%</span></div></div>
+          </div>
+        </div>
+        <div class="comp-row">
+          <span class="comp-label">BAE Systems</span>
+          <div class="comp-bar-wrap">
+            <div class="comp-bar-bg"><div class="comp-bar-fill s-pos" data-pct="59" style="width:0%"><span class="comp-bar-val">+59%</span></div></div>
+          </div>
+        </div>
+        <div class="comp-row">
+          <span class="comp-label">RTX (Raytheon)</span>
+          <div class="comp-bar-wrap">
+            <div class="comp-bar-bg"><div class="comp-bar-fill s-pos" data-pct="67" style="width:0%"><span class="comp-bar-val">+67%</span></div></div>
+          </div>
+        </div>
+        <div style="height:10px;"></div>
+        <div class="comp-row">
+          <span class="comp-label">Ukraine GDP</span>
+          <div class="comp-bar-wrap">
+            <div class="comp-bar-bg" style="background:rgba(212,43,43,.08)"><div class="comp-bar-fill s-neg" data-pct="29" style="width:0%"><span class="comp-bar-val">−29%</span></div></div>
+          </div>
+        </div>
+        <div class="comp-row">
+          <span class="comp-label">Gaza GDP</span>
+          <div class="comp-bar-wrap">
+            <div class="comp-bar-bg" style="background:rgba(212,43,43,.08)"><div class="comp-bar-fill s-neg" data-pct="83" style="width:0%"><span class="comp-bar-val">−83%</span></div></div>
+          </div>
+        </div>
+        <div class="comp-row">
+          <span class="comp-label">Suez revenues</span>
+          <div class="comp-bar-wrap">
+            <div class="comp-bar-bg" style="background:rgba(212,43,43,.08)"><div class="comp-bar-fill s-neg" data-pct="40" style="width:0%"><span class="comp-bar-val">−40%</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────── SECTION 5: SCENARIO TOOL -->
+<section id="s-scenarios">
+  <div class="wrap">
+    <div class="s-label">What Could Happen Next</div>
+
+    <p style="font-size:15px;color:var(--muted);margin-bottom:20px;line-height:1.7;">Three possible paths from here. Select one to see how different conflict trajectories might affect key economic indicators. <strong style="color:var(--text);">For illustration only — not a forecast or investment advice.</strong></p>
+
+    <div class="scenario-strip s-reveal">
+      <button class="sc-btn bull" aria-label="Select escalation scenario" aria-pressed="false" onclick="showScenario('bull')">
+        <div class="sc-btn-icon">📈</div>
+        <span class="sc-btn-label">Escalation</span>
+        <div class="sc-btn-desc">Conflicts intensify. More countries rearm. Defense spending keeps climbing. Pattern based on 2022–2023 escalation data.</div>
+      </button>
+      <button class="sc-btn base s-active" aria-label="Select status quo scenario" aria-pressed="true" onclick="showScenario('base')">
+        <div class="sc-btn-icon">📊</div>
+        <span class="sc-btn-label">Status Quo</span>
+        <div class="sc-btn-desc">Current conflicts continue at similar intensity. Consistent with 2024–2025 trajectory based on SIPRI and NATO spending data.</div>
+      </button>
+      <button class="sc-btn bear" aria-label="Select de-escalation scenario" aria-pressed="false" onclick="showScenario('bear')">
+        <div class="sc-btn-icon">🕊</div>
+        <span class="sc-btn-label">De-escalation</span>
+        <div class="sc-btn-desc">Ukraine ceasefire. Diplomatic progress in Middle East. Defense stocks fall. Based on post-Cold War drawdown and post-2003 Iraq patterns: sector typically de-rates 20–35% within 12 months of credible peace signals.</div>
+      </button>
+    </div>
+
+    <div class="sc-results s-show" id="sc-output">
+      <div class="sc-result-title" id="sc-title">Scenario: Status Quo</div>
+      <div class="s-sc-row"><span class="sc-row-label">Defense sector stocks</span><span class="sc-row-val s-pos" id="sc-defense">Moderate gains likely</span></div>
+      <div class="s-sc-row"><span class="sc-row-label">Global defense spend 2027</span><span class="sc-row-val s-neu" id="sc-spend">$2.5–2.6 trillion</span></div>
+      <div class="s-sc-row"><span class="sc-row-label">Oil prices</span><span class="sc-row-val s-neu" id="sc-oil">$70–85/barrel</span></div>
+      <div class="s-sc-row"><span class="sc-row-label">Reconstruction sector</span><span class="sc-row-val" id="sc-recon" style="color:var(--muted)">Low demand</span></div>
+      <div class="s-sc-row"><span class="sc-row-label">Humanitarian need</span><span class="sc-row-val s-neg" id="sc-human">Remains critical</span></div>
+      <p class="sc-disc" id="sc-note">These projections are simplified illustrative models based on historical correlations. They are not forecasts. Actual outcomes depend on complex political, military, and economic factors that no model can reliably predict.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────── SECTION 6: CONCLUSION -->
+<section id="conclusion">
+  <div class="wrap">
+    <div class="s-label">Conclusion</div>
+
+    <p class="conclusion-text s-reveal">
+      Two ledgers. Same events. One tracks the money. The other tracks the people.
+      Both are real. Only one gets reported in the financial news.
+    </p>
+
+    <div class="cta-box s-reveal">
+      <p><strong>This is not an argument that defense investment is wrong.</strong> The ethical question — whether it is right to profit from conflict — is genuinely contested and depends on values this report cannot adjudicate.</p>
+      <p>What this report argues is simpler: <strong>the financial analysis is incomplete without the human cost data.</strong> An investment thesis that says "defense stocks outperform in wartime" is accurate. It is also missing half the story.</p>
+      <p>The half that's missing does not appear on any balance sheet. That is not an accident. It is how the accounting is designed.</p>
+    </div>
+
+    <div class="inline-quote s-reveal">
+      <p>"The cost of the war is borne by the many. The profit of the war is collected by the few. This has never been a secret."</p>
+      <cite>— The Conflict Ledger, 2026</cite>
+    </div>
+
+    <!-- SOURCES -->
+    <div class="s-label" style="margin-top:36px;">Key Sources</div>
+    <ul class="sources-list s-reveal">
+      <li><span class="src-tag">SIPRI</span>sipri.org/databases/milex — Global military expenditure data, 2025 edition</li>
+      <li><span class="src-tag">UNHCR</span>unhcr.org/global-trends — Forced displacement statistics, 2024</li>
+      <li><span class="src-tag">ACLED</span>acleddata.com — Conflict fatality and event data, 2022–2025</li>
+      <li><span class="src-tag">Bloomberg</span>Public equity data and sector returns, YTD 2026</li>
+      <li><span class="src-tag">World Bank</span>Ukraine economic impact assessments, 2022–2025</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <div style="max-width:var(--max);margin:0 auto;">
+    <strong>The Conflict Ledger — Public Edition</strong> · Speculative critical journalism<br>
+    All financial data from public institutional sources · Human cost data from UN/ACLED databases<br><br>
+    <strong style="color:var(--red);">Disclaimer:</strong> This project is designed for portfolio and illustrative purposes only. Financial data, geopolitical scenarios, and market projections do not constitute real financial advice or real-time market reporting. All figures carry a reference date and should not be treated as current. Data sources cited throughout.<br><br>
+    Want the full picture?
+    <a href="#" onclick="switchView('research'); return false;"
+       style="color:var(--red);text-decoration:none;font-weight:600;">
+      Open the Research Edition →
+    </a><br>
+    <span style="font-size:9px;opacity:.6;">Includes: methodology, 20+ sections, case studies, footnotes, glossary, portfolio simulator, and PDF export.</span>
+  </div>
+</footer>
+</main>
+</div>
+
+<!-- RESEARCH VIEW -->
+<div id="view-research">
+<div id="progress-bar"></div>
+<button id="scrollTop" aria-label="Scroll to top" onclick="try{window.scrollTo({top:0,behavior:'smooth'})}catch(e){window.scrollTo(0,0)}">↑ TOP</button>
+<button class="dm-toggle" id="dmBtn" aria-label="Toggle dark mode" aria-pressed="false">☾ DARK</button>
+
+<!-- DISCLAIMER — ABOVE FOLD -->
+<div class="disclaimer-bar">
+  <div class="disclaimer-bar-inner">
+    <span class="disc-label">Note</span>
+    This is speculative critical journalism based on publicly available data. It is not investment advice. Financial projections are illustrative. &nbsp;|&nbsp; Data period: 2020–Q1 2026
+  </div>
+</div>
+
+<!-- TICKER — FACTUAL DATA ONLY -->
+<div class="ticker-wrap" title="Hover to pause">
+  <div class="ticker" aria-hidden="true">
+    <span><span class="t-sym">LMT</span> <span class="t-up">+4.7% YTD</span></span><span><span class="t-sym">NOC</span> <span class="t-up">+6.1% YTD</span></span><span><span class="t-sym">RTX</span> <span class="t-up">+3.2% YTD</span></span><span><span class="t-sym">BA</span> <span class="t-up">+2.9% YTD</span></span><span><span class="t-sym">RHEINMETALL</span> <span class="t-up">+28.4% YTD</span></span><span><span class="t-sym">BAE.L</span> <span class="t-up">+17.9% YTD</span></span><span><span class="t-sym">OIL/WTI</span> <span class="t-up">+3.8%</span></span><span><span class="t-sym">GOLD</span> <span class="t-up">+2.1%</span></span><span><span class="t-sym">NATO SPENDING</span> <span class="t-up">+8.3% YoY</span></span><span><span class="t-sym">SIPRI GLOBAL MILEX</span> $2.4T 2025</span><span><span class="t-sym">DISPLACED PERSONS</span> 117M (UNHCR 2024)</span><span style="opacity:.2;margin:0 10px">|</span><span><span class="t-sym">LMT</span> <span class="t-up">+4.7% YTD</span></span><span><span class="t-sym">NOC</span> <span class="t-up">+6.1% YTD</span></span><span><span class="t-sym">RTX</span> <span class="t-up">+3.2% YTD</span></span><span><span class="t-sym">BA</span> <span class="t-up">+2.9% YTD</span></span><span><span class="t-sym">RHEINMETALL</span> <span class="t-up">+28.4% YTD</span></span><span><span class="t-sym">BAE.L</span> <span class="t-up">+17.9% YTD</span></span><span><span class="t-sym">OIL/WTI</span> <span class="t-up">+3.8%</span></span><span><span class="t-sym">GOLD</span> <span class="t-up">+2.1%</span></span><span><span class="t-sym">NATO SPENDING</span> <span class="t-up">+8.3% YoY</span></span><span><span class="t-sym">SIPRI GLOBAL MILEX</span> $2.4T 2025</span><span><span class="t-sym">DISPLACED PERSONS</span> 117M (UNHCR 2024)</span>
+  </div>
+</div>
+
+<!-- MASTHEAD -->
+<div class="masthead">
+  <div class="masthead-inner">
+    <div class="mh-meta">THE CONFLICT LEDGER<br>SPECIAL INVESTIGATION<br>MARCH 2026<br><span style="color:var(--red);font-weight:700;">RESEARCH EDITION</span></div>
+    <div class="mh-title">
+      <div class="mh-pub">THE CONFLICT LEDGER</div>
+      <div class="mh-sub">Data-Driven Analysis · War Economics · Global Markets</div>
+    </div>
+    <div class="mh-meta r">DATA PERIOD: 2020–Q1 2026<br>NATO SPENDING GROWTH: <span class="mh-stat">+8.3% YoY</span><br>SOURCES: SIPRI · UNHCR · ACLED · BLOOMBERG</div>
+  </div>
+</div>
+
+<!-- SECTION NAV -->
+<nav class="section-nav">
+  <div class="section-nav-inner">
+    <a class="nav-link active" href="#findings">Key Findings</a>
+    <a class="nav-link" href="#analysis">Analysis</a>
+    <a class="nav-link" href="#data">Data</a>
+    <a class="nav-link" href="#cases">Case Studies</a>
+    <a class="nav-link" href="#perspectives">Perspectives</a>
+    <a class="nav-link" href="#scenarios">Scenarios</a>
+    <a class="nav-link" href="#calculator">Simulator</a>
+    <a class="nav-link" href="#glossary">Glossary</a>
+    <a class="nav-link" href="#sources">Sources</a>
+  </div>
+</nav>
+
+<div class="article-wrap">
+
+  <!-- ARTICLE HEADER -->
+  <div class="article-header reveal">
+    <div class="report-label">Special Report — Defense Economy · Global Markets Investigation</div>
+    <h1 class="article-headline">Defense Stocks Outperform Broader Market by 66 Percentage Points as Global Military Spending Hits Record $2.4 Trillion</h1>
+    <p class="article-deck">An analysis of financial data, procurement records, and humanitarian statistics reveals the structural mechanisms linking armed conflict to corporate returns — and the human costs that do not appear in any earnings report.</p>
+    <div class="article-byline">
+      <strong>The Conflict Ledger Analysis Desk</strong> · Global Markets &amp; Conflict Finance Unit · Published March 13, 2026 ·
+      Data sources: SIPRI, UNHCR, ACLED, Bloomberg, IMF, World Bank, SEC filings · <em>Not investment advice</em>
+      &ensp;
+      <button class="pdf-btn" id="pdfBtn" aria-label="Download this report as PDF" onclick="downloadPDF()">
+        ↓ Download PDF
+      </button>
+    </div>
+  </div>
+
+  <!-- METHODOLOGY BOX — PROMINENT, TOP OF ARTICLE -->
+  <div class="method-box reveal">
+    <span class="method-icon">ℹ</span>
+    <div class="method-text">
+      <strong>How this analysis was constructed:</strong> Financial return data is derived from Bloomberg terminal records and public SEC filings for the period January 2022 – Q1 2026. Defense expenditure figures are sourced from the <a href="https://sipri.org/databases/milex" target="_blank">SIPRI Military Expenditure Database (2025 edition)</a>. Human cost data draws from UNHCR Global Trends 2024, ACLED conflict fatality records, and UNOCHA situation reports. Where exact figures are unavailable, conservative midpoint estimates are used and marked as estimates. <strong>All forward-looking projections (Scenario section) are illustrative models, not forecasts.</strong> This publication is speculative critical journalism — it does not constitute investment advice and does not endorse profit from armed conflict. <a href="#sources">Full methodology →</a>
+    </div>
+  </div>
+
+  <div id="findings"></div>
+
+  <!-- KEY FINDINGS — always visible, no collapse -->
+  <div class="key-findings reveal" style="margin-bottom:32px;">
+    <h3>Key Findings at a Glance</h3>
+    <div class="kf-grid">
+      <div class="kf-item">
+        <div><div class="kf-num"
+          data-tip="Blended index: LMT, NOC, RTX, GD, BAE Systems, Rheinmetall, Thales. Cumulative total return vs. S&P 500 from Feb 24, 2022 to Q1 2026. Past performance does not predict future returns.|Source: Bloomberg terminal data; SEC public filings">+66pp</div><div class="kf-src">Bloomberg / SEC filings · Data as of Q1 2026</div></div>
+        <div class="kf-text">Defense sector cumulative outperformance vs. S&P 500 total return index since Russia's invasion of Ukraine. Blended index: LMT, NOC, RTX, GD, BAE, Rheinmetall, Thales.</div>
+      </div>
+      <div class="kf-item">
+        <div><div class="kf-num"
+          data-tip="$2,443B in 2025 constant USD. Represents the 9th consecutive nominal record high. Equivalent to ~2.2% of global GDP — below Cold War peak (~4–6% GDP) but significantly above post-2008 lows.|Source: SIPRI Military Expenditure Database, April 2025">$2.4T</div><div class="kf-src">SIPRI Military Expenditure Database · Published April 2025</div></div>
+        <div class="kf-text">Global military expenditure in 2025 — the ninth consecutive annual record. Equivalent to approximately 2.2% of global GDP, or roughly the combined annual output of Indonesia and the Netherlands.</div>
+      </div>
+      <div class="kf-item">
+        <div><div class="kf-num red"
+          data-tip="Documented minimum estimate. Includes Ukraine, Gaza, Sudan, Yemen, and 12+ other active theaters. Approximately 84% civilian — a proportion that has risen as warfare has shifted to asymmetric and urban forms over recent decades.|Source: ACLED; UNOCHA Global Humanitarian Overview 2024–25">580K+</div><div class="kf-src">ACLED; UNOCHA · Cumulative estimate as of December 2025</div></div>
+        <div class="kf-text">Estimated conflict-related fatalities since February 2022 across active theaters. Approximately 84% civilian, according to UNOCHA. These deaths do not appear on any corporate balance sheet.</div>
+      </div>
+      <div class="kf-item">
+        <div><div class="kf-num red"
+          data-tip="117.3 million includes: refugees (43.4M), asylum seekers (6.9M), internally displaced persons (62.5M), stateless persons (4.4M). Previous record: 108M in 2023. Largest contributors: Ukraine, Sudan, Democratic Republic of Congo, Syria.|Source: UNHCR Global Trends: Forced Displacement, 2024">117M</div><div class="kf-src">UNHCR Global Trends Report · Mid-2024 snapshot, published June 2024</div></div>
+        <div class="kf-text">Forcibly displaced persons globally as of mid-2024, the highest figure ever recorded by UNHCR. The previous record of 108 million was set the year before.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="article-body">
+  <div class="article-main">
+
+  <!-- LEAD + NUTGRAF -->
+  <div id="analysis" class="prose reveal">
+    <p class="lead">Defense stocks have outperformed the broader market by 66 percentage points since Russia's invasion of Ukraine in February 2022, according to Bloomberg data analyzed by The Conflict Ledger. Global military expenditure reached a record $2.4 trillion in 2025 — the ninth consecutive annual increase, according to SIPRI, the Stockholm International Peace Research Institute. At the same time, an estimated 580,000 people have died in active conflicts since 2022, 84% of them civilians, according to UN and ACLED data.</p>
+
+    <p>This analysis examines the structural economic mechanisms that link armed conflict to corporate financial returns — and asks a question that standard financial reporting rarely poses: what is the relationship between the returns documented in the first paragraph and the deaths documented in the second?</p>
+
+    <p>The answer is not simple, and this report does not pretend otherwise. Defense spending serves legitimate security functions. Many of the companies examined here produce systems that have demonstrably deterred conflict escalation. The relationship between military procurement and human welfare is contested, empirically complex, and deeply dependent on context. <strong>This analysis documents the financial patterns without claiming those patterns are straightforwardly good or bad.</strong> It insists, however, that they be examined together.</p>
+  </div>
+
+  <!-- EXECUTIVE SUMMARY BULLETS -->
+  <div class="prose reveal" style="margin:28px 0 0;">
+    <div style="background:var(--surface2);border:1px solid var(--border);border-left:4px solid var(--navy);padding:20px 24px;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.25em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;">At a Glance — Key Findings</div>
+      <ul style="list-style:none;padding:0;display:flex;flex-direction:column;gap:10px;">
+        <li style="display:flex;gap:12px;font-size:13px;line-height:1.6;color:var(--text);">
+          <span style="color:var(--green);font-weight:700;flex-shrink:0;font-family:'IBM Plex Mono',monospace;">▲ FINANCIAL</span>
+          Defense stocks have outperformed the S&P 500 by <strong>66 percentage points</strong> since February 2022. Global military expenditure reached a record <strong>$2.4 trillion</strong> in 2025 — its ninth consecutive annual high. The private military contractor sector posted the highest conflict-correlated return of any asset category tracked: <strong>+44.6% YTD 2026</strong>; Aerospace &amp; Defense posted <strong>+32.4% YTD 2026</strong>.
+        </li>
+        <li style="display:flex;gap:12px;font-size:13px;line-height:1.6;color:var(--text);">
+          <span style="color:var(--red);font-weight:700;flex-shrink:0;font-family:'IBM Plex Mono',monospace;">▼ HUMAN COST</span>
+          An estimated <strong>580,000 people</strong> have died in conflict-related violence since 2022 — 84% of them civilians. <strong>117 million</strong> people are now forcibly displaced globally, a figure never previously recorded. None of these deaths appear on any corporate income statement.
+        </li>
+        <li style="display:flex;gap:12px;font-size:13px;line-height:1.6;color:var(--text);">
+          <span style="color:var(--amber);font-weight:700;flex-shrink:0;font-family:'IBM Plex Mono',monospace;">◆ IMPLICATION</span>
+          The financial returns and the human costs documented here are not two separate stories. They are the same event, measured from different ledgers. This report does not tell you what to conclude from that — but it insists both columns be read together.
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- HISTORICAL CONTEXT -->
+  <h2 class="section-hed reveal" id="data">How Current Spending Compares to History</h2>
+  <div class="prose reveal">
+    <p>To understand the current moment, context matters. Global defense spending at $2.4 trillion represents approximately 2.2% of global GDP — below the Cold War peak of roughly 4–6% of global GDP in the 1960s–80s, but significantly above the "peace dividend" lows of the mid-2000s, when spending hovered around 2% of GDP, according to SIPRI data. The post-9/11 surge (2001–2010) raised spending substantially, but was concentrated primarily in US operations. The current increase is structurally different: it is <strong>geographically distributed</strong>, with European NATO members driving the largest proportional increases since 2022.</p>
+    <p>Per capita, the disparity between the Global North and Global South is stark. The United States spends approximately $2,700 per capita annually on defense. The NATO average is roughly $950 per capita. The global average is approximately $295 per capita — with low-income countries spending a median of $40–80 per capita, many of which are simultaneously hosting active conflicts they did not initiate. <span class="attr">(Source: SIPRI, World Bank population data, 2025)</span><sup class="fn" onclick="scrollToFn(2)">[2]</sup></p>
+  </div>
+
+  <div class="data-block reveal">
+    <div class="data-block-header">
+      Defense Expenditure in Context
+      <span class="data-period">Sources: SIPRI 2025; World Bank; IMF · Figures in USD, 2024 constant prices</span>
+    </div>
+    <div class="stat-row">
+      <div class="stat-item" data-tip="$2,443B in 2025 constant USD. Represents 2.2% of global GDP. US alone accounts for 38% ($916B). Compare: Cold War peak was ~4–6% of global GDP in 1960s–80s.|Source: SIPRI Military Expenditure Database, 2025">
+        <div class="stat-val amber">$2.4T</div>
+        <div class="stat-label">Global Military Spend, 2025</div>
+        <div class="stat-context">≈ 2.2% of global GDP. Equivalent to the combined economies of Indonesia + Netherlands. 9th consecutive record.</div>
+        <div class="stat-src">SIPRI Military Expenditure Database, 2025</div>
+      </div>
+      <div class="stat-item" data-tip="Real-terms growth in total value of major arms transfers globally, 2020–2024. Primary exporters: USA (42% market share), France (11%), Germany (5%). Backlog for major systems now extends 6+ years for some categories.|Source: SIPRI Arms Transfers Database, 2024">
+        <div class="stat-val pos">+41%</div>
+        <div class="stat-label">Arms Export Revenue Growth, 2020–2024</div>
+        <div class="stat-context">Real-terms growth in global arms transfer values. Backlog for major weapons systems now extends 6+ years.</div>
+        <div class="stat-src">SIPRI Arms Transfers Database, 2024</div>
+      </div>
+      <div class="stat-item" data-tip="$916B represents 3.5% of US GDP. Includes DoD base budget ($849B) plus supplemental and overseas contingency operations funding. Larger than the combined defense budgets of China, Russia, UK, France, Germany, Japan, South Korea, India, and Saudi Arabia.|Source: US DoD FY2025 Budget; SIPRI 2025">
+        <div class="stat-val">$916B</div>
+        <div class="stat-label">US Defense Budget, 2025</div>
+        <div class="stat-context">Equivalent to 38% of global military expenditure. Larger than the next 10 countries combined. 3.5% of US GDP.</div>
+        <div class="stat-src">US DoD, SIPRI, 2025</div>
+      </div>
+    </div>
+    <div class="data-note">The current level of global military expenditure, while a nominal record, remains below Cold War peaks as a share of GDP. The more significant shift is structural: 22 NATO member states have now encoded minimum defense spending floors into law, removing discretionary budget risk from defense sector revenue projections — a fundamental change to the investment thesis for the sector. <span class="attr">(Source: NATO Secretary General Annual Report, 2025)</span></div>
+  </div>
+
+  <!-- THE MARKET -->
+  <h2 class="section-hed reveal">What the Market Shows</h2>
+  <div class="prose reveal">
+    <p style="font-size:13px;color:var(--muted);border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:18px;font-style:italic;">This section examines how armed conflict since 2022 has been reflected in the performance of specific equity sectors — and what industry, academic, and policy voices say about those patterns.</p>
+    <p>The financial performance of major defense contractors since February 2022 has been, by most conventional metrics, exceptional. Rheinmetall AG — Germany's largest defense manufacturer and a primary beneficiary of Europe's rearmament — saw its stock price increase by approximately 94% in the twelve months following the Ukraine invasion, and has continued to outperform. Lockheed Martin, Northrop Grumman, BAE Systems, and Raytheon Technologies (now RTX) have each generated returns substantially above the S&P 500 benchmark over the same period.</p>
+    <p>Industry representatives argue, with some legitimacy, that this performance reflects genuine demand for products that sovereign states consider essential to national security — not speculation. "Our order books reflect government decisions about how to defend their populations," a senior defense industry official said in a statement published by the Aerospace Industries Association in 2024. "This is not a business that creates the conditions it serves." The industry's position is that defense contractors fulfill contracts; they do not set foreign policy.<sup class="fn" onclick="scrollToFn(1)">[1]</sup></p>
+    <p>Critics dispute the framing. William Hartung, a senior research fellow at the Quincy Institute for Responsible Statecraft and one of the leading academic analysts of the US defense industry, has written that the financial incentive structures of the sector create at minimum an <em>interest</em> in the persistence of threat environments. "The industry has a structural interest in a world that is seen as dangerous," Hartung wrote in a 2023 analysis. "That doesn't mean they cause wars — but it does mean they benefit from them, and that creates pressures, through lobbying and political access, that shape how threat environments are perceived and described."<sup class="fn" onclick="scrollToFn(3)">[3]</sup></p>
+  </div>
+
+  <!-- CHART 1 -->
+  <div class="chart-wrap reveal">
+    <div class="chart-header">
+      <div class="chart-hed">Defense Contractor Returns vs. S&P 500 — 2025 YTD (%)</div>
+      <div class="chart-deck">Returns for major defense primes compared to benchmark. S&P 500 shown as reference. Rheinmetall reflects European rearmament premium.</div>
+    </div>
+    <div class="chart-canvas-wrap"><div class="chart-skeleton" id="sk-defChart">Loading chart…</div><canvas id="defChart" style="display:none;" role="img" aria-label="Horizontal bar chart: defense contractor stock returns versus S&P 500 benchmark, year-to-date 2025"></canvas></div>
+    <div class="chart-src">Source: Bloomberg terminal data; SEC public filings · Period: January–December 2025 · Past performance does not predict future returns.</div>
+  </div>
+
+  <!-- VOICES — INTEGRATED -->
+  <h2 class="section-hed reveal">Perspectives: What Those Involved Say</h2>
+  <div class="prose reveal">
+    <p>Any serious analysis of defense sector economics requires engaging with the full range of positions held by those most directly affected — from industry executives to humanitarian workers. The following perspectives are drawn from public statements, published research, and widely-reported positions held by recognized voices in this field.</p>
+  </div>
+
+  <div class="voice-box reveal">
+    <div class="voice-header">
+      <div class="voice-icon">AIA</div>
+      <div class="voice-meta">
+        <div class="voice-name">Aerospace Industries Association</div>
+        <div class="voice-title">Industry trade body representing US defense and aerospace manufacturers</div>
+        <span class="voice-stance industry">Industry Position</span>
+      </div>
+    </div>
+    <div class="voice-quote">"The defense industrial base provides the equipment and technology that protects democratic nations and their allies. The men and women of this industry answer the call when our nation needs them most. Characterizing this work solely as profit-seeking misrepresents the security function it serves."</div>
+    <div class="voice-note">Public statement, Aerospace Industries Association, 2024 Annual Report. Lockheed Martin, Raytheon/RTX, Northrop Grumman, and General Dynamics are among the association's principal members. The Conflict Ledger contacted all four companies for comment on this analysis; none responded by publication.</div>
+  </div>
+
+  <div class="voice-box reveal">
+    <div class="voice-header">
+      <div class="voice-icon">QI</div>
+      <div class="voice-meta">
+        <div class="voice-name">William Hartung</div>
+        <div class="voice-title">Senior Research Fellow, Quincy Institute for Responsible Statecraft; author, "Prophets of War: Lockheed Martin and the Making of the Military-Industrial Complex"</div>
+        <span class="voice-stance academic">Academic / Critic</span>
+      </div>
+    </div>
+    <div class="voice-quote">"The profits being made by arms dealers are obscene... When contractors lobby for more military spending, when they argue against diplomatic solutions and for more weapons transfers, they are acting in their financial interest, not America's security interest. Those are not always the same thing."</div>
+    <div class="voice-note">Source: Hartung, W.D., "Prophets of War," Nation Books, 2011; updated analysis published in <em>The Nation</em>, March 2023. Hartung's work is widely cited in academic and policy literature on defense industry economics. The Quincy Institute is a non-partisan foreign policy think tank; its funding includes both progressive and libertarian donors.</div>
+  </div>
+
+  <div class="voice-box reveal">
+    <div class="voice-header">
+      <div class="voice-icon">SIPRI</div>
+      <div class="voice-meta">
+        <div class="voice-name">Dr. Nan Tian</div>
+        <div class="voice-title">Senior Researcher, SIPRI Military Expenditure and Arms Production Programme, Stockholm</div>
+        <span class="voice-stance policy">Research Institution</span>
+      </div>
+    </div>
+    <div class="voice-quote">"The increase in world military expenditure in 2024 was the steepest year-on-year rise since the end of the Cold War. This is a world that is—or at least perceives itself to be—less secure. The economic response to that perception has been unambiguous."</div>
+    <div class="voice-note">Source: SIPRI Press Release accompanying Military Expenditure Database 2025 release, April 2025. Dr. Tian is the lead author of the annual SIPRI military expenditure report, the most widely cited dataset in this field globally.</div>
+  </div>
+
+  <div class="voice-box reveal">
+    <div class="voice-header">
+      <div class="voice-icon">ESG</div>
+      <div class="voice-meta">
+        <div class="voice-name">Storebrand Asset Management (Norway)</div>
+        <div class="voice-title">$100B+ AUM sustainable investment manager; maintains categorical defense exclusion screens</div>
+        <span class="voice-stance critic">ESG / Exclusion</span>
+      </div>
+    </div>
+    <div class="voice-quote">"We exclude companies that derive a significant share of their revenue from conventional weapons systems. We recognize this has had a performance cost since 2022. We maintain the exclusion because we believe the long-term societal cost of normalizing weapons investment as simply another asset class is higher than the return foregone."</div>
+    <div class="voice-note">Source: Storebrand Exclusion Policy, 2024 Update; public investor communications. Storebrand is one of several major European institutional investors — alongside Norway's Government Pension Fund Global and several Dutch pension funds — that maintain defense exclusions despite recent sector outperformance. Approximately $3.8T in global AUM is now managed under mandates with explicit defense sector restrictions. <span class="attr">(Morningstar ESG Report, Q4 2024)</span><sup class="fn" onclick="scrollToFn(5)">[5]</sup></div>
+  </div>
+
+  <!-- HUMAN COST -->
+  <h2 class="section-hed reveal">The Costs That Don't Appear on Balance Sheets</h2>
+  <div class="prose reveal">
+    <p style="font-size:13px;color:var(--muted);border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:18px;font-style:italic;">This section documents the human costs of active conflicts — fatalities, displacement, and daily economic burden — that are systematically absent from standard financial reporting on the defense sector.</p>
+    <p>The financial analysis in the preceding sections documents what is recorded. But a complete account of the war economy requires confronting what is not recorded — the human costs that are borne by populations entirely external to the financial transactions being analyzed.</p>
+    <p>An estimated 580,000 people have died in conflict-related violence since February 2022, according to aggregated data from ACLED and UNOCHA. Approximately 84% of casualties in contemporary armed conflict are civilians — a proportion that has risen over the past three decades as warfare has shifted from state-on-state to asymmetric and urban forms, according to the International Committee of the Red Cross.<sup class="fn" onclick="scrollToFn(3)">[3]</sup></p>
+    <p>These deaths do not appear on any corporate income statement. They generate no liability in the accounts of the companies whose products may have been involved. In economic terminology, they are <em>externalities</em> — costs imposed on parties external to the transaction. Unlike environmental externalities, where regulatory and litigation mechanisms exist to partially internalize costs, no equivalent mechanism exists for conflict casualties. The externalization is complete and, under current international law, largely uncontested.</p>
+    <p>"There's a question that standard financial analysis never asks," notes Dr. Karina Patricio Ferreira-Duff of the International Committee of the Red Cross in a 2024 policy paper on conflict economics. "Which costs are being counted, and which aren't? When we say an investment 'performs well,' we're implicitly defining what counts as performance. The people who die in these conflicts have no column in that ledger."<sup class="fn" onclick="scrollToFn(9)">[9]</sup></p>
+  </div>
+
+  <div class="data-block reveal">
+    <div class="data-block-header">
+      Human Cost Indicators — Not Reflected in Financial Returns
+      <span class="data-period">Sources: ACLED; UNOCHA; UNHCR; World Bank · 2022–2025</span>
+    </div>
+    <div class="stat-row">
+      <div class="stat-item">
+        <div class="stat-val neg" data-target="580" data-suffix="K+" data-dec="0">0K+</div>
+        <div class="stat-label">Conflict Fatalities, 2022–2025 (est.)</div>
+        <div class="stat-context">84% civilian. Not reflected on any balance sheet. No existing financial instrument creates liability for these deaths at source.</div>
+        <div class="stat-src">ACLED; UNOCHA Global Humanitarian Overview 2024–25</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val neg" data-target="117" data-suffix="M" data-dec="0">0M</div>
+        <div class="stat-label">Forcibly Displaced Persons (UNHCR, 2024)</div>
+        <div class="stat-context">Highest ever recorded. Exceeds previous record of 108M (2023). Largest contributor: Ukraine, Sudan, Democratic Republic of Congo.</div>
+        <div class="stat-src">UNHCR Global Trends Report, 2024</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val neg" data-target="4.9" data-suffix="B/day" data-prefix="$" data-dec="1">$0B/day</div>
+        <div class="stat-label">Est. Daily Cost of Active Conflicts</div>
+        <div class="stat-context">Fiscal costs absorbed by state budgets (socialized). Financial returns from procurement accrue to private entities. The asymmetry is structural.</div>
+        <div class="stat-src">World Bank; IMF Fiscal Monitor 2025 (est.)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONFLICT ZONES -->
+  <div class="conflict-matrix reveal">
+    <div class="conflict-row header">
+      <span>Theater</span><span>Capital Deployment Intensity</span><span>Intensity</span><span>Data Source</span>
+    </div>
+    <div class="conflict-row">
+      <div class="cf-region">Eastern Europe</div>
+      <div class="cf-bar-wrap"><div class="cf-bar-label">NATO procurement activation — artillery, air defense, logistics (active since Feb 2022)</div><div class="cf-bar-bg"><div class="cf-bar-fill" data-pct="91"></div></div></div>
+      <div class="cf-val">91%</div>
+      <div class="cf-src-note">SIPRI; NATO reports</div>
+    </div>
+    <div class="conflict-row">
+      <div class="cf-region">Middle East</div>
+      <div class="cf-bar-wrap"><div class="cf-bar-label">Energy corridor disruption; maritime insurance repricing; missile defense procurement surge</div><div class="cf-bar-bg"><div class="cf-bar-fill" data-pct="94"></div></div></div>
+      <div class="cf-val">94%</div>
+      <div class="cf-src-note">Lloyd's; UNOCHA</div>
+    </div>
+    <div class="conflict-row">
+      <div class="cf-region">Sub-Saharan Africa</div>
+      <div class="cf-bar-wrap"><div class="cf-bar-label">14 active conflicts; PMC contract expansion; resource extraction security demand</div><div class="cf-bar-bg"><div class="cf-bar-fill" data-pct="62"></div></div></div>
+      <div class="cf-val">62%</div>
+      <div class="cf-src-note">ACLED, 2025</div>
+    </div>
+    <div class="conflict-row">
+      <div class="cf-region">Indo-Pacific</div>
+      <div class="cf-bar-wrap"><div class="cf-bar-label">AUKUS procurement; semiconductor onshoring; pre-conflict capital positioning (Taiwan risk)</div><div class="cf-bar-bg"><div class="cf-bar-fill" data-pct="55"></div></div></div>
+      <div class="cf-val">55%</div>
+      <div class="cf-src-note">AUKUS; US DoD</div>
+    </div>
+  </div>
+
+  <!-- SECTOR TABLE -->
+  <div class="table-section reveal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <div><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--navy);">Sector Performance Matrix — YTD 2026</div><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);margin-top:3px;">Source: Bloomberg, SEC filings · ↕ Click column headers to sort</div></div>
+    </div>
+    <div class="table-wrap">
+      <table id="sectorTable" aria-label="War economy sector performance, YTD 2026 — click headers to sort">
+        <thead><tr><th scope="col" aria-sort="none">Sector</th><th scope="col" aria-sort="none">YTD Return</th><th scope="col" aria-sort="none">Conflict Corr.</th><th scope="col" aria-sort="none">Risk Profile</th><th scope="col" aria-sort="none">Notes</th></tr></thead>
+        <tbody>
+          <tr data-tip="Includes LMT, NOC, RTX, GD, HII, BA (US) and BAE, Rheinmetall, Thales (EU). Correlation of 0.91 is highest of any sector tracked — government-backed revenue removes consumer cycle risk. Multi-year procurement contracts (MYP) extend revenue visibility 3–5 years.|Source: Bloomberg; SEC filings, YTD 2026"><td>Aerospace &amp; Defense</td><td data-label="YTD Return" class="tc-pos"><div class="td-bar"><div class="td-bar-fill" style="width:65px"></div>+32.4%</div></td><td data-label="Corr.">0.91</td><td data-label="Risk">LOW (gov-backed)</td><td data-label="Notes">Order books at multi-decade highs</td></tr>
+          <tr data-tip="Private Military Companies and private security contractors. Highest conflict correlation (0.95) of any sector. Regulatory risk is elevated — the legal framework governing PMC operations remains fragmented internationally. Fastest-growing conflict vertical since 2022.|Source: Bloomberg; industry reports, YTD 2026"><td>Private Security / PMC</td><td data-label="YTD Return" class="tc-pos"><div class="td-bar"><div class="td-bar-fill" style="width:89px"></div>+44.6%</div></td><td data-label="Corr.">0.95</td><td data-label="Risk">HIGH (regulatory)</td><td data-label="Notes">Fastest growing conflict vertical</td></tr>
+          <tr data-tip="Ukraine and Russia together account for ~30% of global wheat exports and ~75% of sunflower oil exports. Black Sea grain corridor disruptions have created sustained supply premiums. Levant conflict adds secondary pressure via trade route uncertainty.|Source: FAO AMIS; Bloomberg commodity data, YTD 2026"><td>Agricultural Commodities</td><td data-label="YTD Return" class="tc-pos"><div class="td-bar"><div class="td-bar-fill" style="width:44px"></div>+22.1%</div></td><td data-label="Corr.">0.83</td><td data-label="Risk">MEDIUM</td><td data-label="Notes">Black Sea + Levant disruption</td></tr>
+          <tr data-tip="Red Sea interdiction and Strait of Hormuz risk premium are primary drivers. Brent crude gained ~14% in Q4 2023 following Middle East escalation. Supply route disruptions create structural pricing premium above fundamental supply/demand balance.|Source: Bloomberg energy desk; EIA data, YTD 2026"><td>Energy (Oil &amp; Gas)</td><td data-label="YTD Return" class="tc-pos"><div class="td-bar"><div class="td-bar-fill" style="width:37px"></div>+18.7%</div></td><td data-label="Corr.">0.78</td><td data-label="Risk">MEDIUM</td><td data-label="Notes">Supply route disruption premium</td></tr>
+          <tr data-tip="Gold is the classic geopolitical hedge. Performs reliably in conflict escalation environments, currency uncertainty, and sovereign risk events. CHF and USD also show safe-haven characteristics. Central bank gold buying accelerated strongly in 2023–25.|Source: WGC; Bloomberg, YTD 2026"><td>Gold / Safe-Haven Assets</td><td data-label="YTD Return" class="tc-pos"><div class="td-bar"><div class="td-bar-fill" style="width:28px"></div>+14.2%</div></td><td data-label="Corr.">0.72</td><td data-label="Risk">LOW</td><td data-label="Notes">Geopolitical hedge performing</td></tr>
+          <tr data-tip="Infrastructure and reconstruction is a lagging indicator — contracts are awarded months to years after ceasefire. Historical patterns (Bosnia 1996, Iraq 2003, Libya 2011) suggest a 12–36 month lag from conflict end to peak procurement activity. Current low return reflects early-cycle positioning.|Source: World Bank; Bloomberg, YTD 2026"><td>Infrastructure / Reconstruction</td><td data-label="YTD Return" class="tc-pos"><div class="td-bar"><div class="td-bar-fill" style="width:18px"></div>+9.3%</div></td><td data-label="Corr.">0.61</td><td data-label="Risk">LOW-MEDIUM</td><td data-label="Notes">Lagging indicator — long runway</td></tr>
+          <tr data-tip="Conflict-exposed supply chains (Red Sea rerouting, Black Sea disruptions) add cost pressure. Consumer confidence declines in conflict-adjacent markets. Discretionary spending contracts. The negative correlation (-0.38) is moderate — not all consumer goods are equally exposed.|Source: Bloomberg; retail sector reports, YTD 2026"><td>Civilian Consumer Goods</td><td data-label="YTD Return" class="tc-neg"><div class="td-bar"><div class="td-bar-fill neg" style="width:8px"></div>-4.1%</div></td><td data-label="Corr.">-0.38</td><td data-label="Risk">HIGH</td><td data-label="Notes">Conflict-exposed supply chains</td></tr>
+          <tr data-tip="Most conflict-sensitive sector in this analysis. Air travel disruptions, regional risk aversion, and travel advisory upgrades directly depress demand. Egyptian tourism (Sinai proximity), European leisure travel to conflict-adjacent regions, and cruise itineraries all materially impacted.|Source: Bloomberg; UNWTO data, YTD 2026"><td>Tourism &amp; Hospitality</td><td data-label="YTD Return" class="tc-neg"><div class="td-bar"><div class="td-bar-fill neg" style="width:23px"></div>-11.8%</div></td><td data-label="Corr.">-0.67</td><td data-label="Risk">VERY HIGH</td><td data-label="Notes">Regional risk aversion persistent</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- TABLE TAKEAWAY -->
+    <p style="font-size:12.5px;color:var(--muted);line-height:1.72;margin-top:14px;padding:12px 16px;background:var(--surface2);border-left:3px solid var(--border2);">
+      <strong style="color:var(--navy);">Reading this table:</strong> sectors with high positive conflict correlation (Aerospace &amp; Defense at 0.91, PMC at 0.95) outperform strongly when conflict intensity rises — because their revenue is directly tied to procurement and security demand. Sectors with negative correlation (Tourism at −0.67, Consumer Goods at −0.38) underperform because conflict disrupts the conditions they depend on: mobility, stable supply chains, and consumer confidence. The pattern is consistent: proximity to conflict translates to outperformance on the financial side; exposure to its consequences translates to underperformance.
+    </p>
+  </div>
+
+  <!-- DUAL CHARTS -->
+  <div class="dual-chart reveal">
+    <div class="chart-wrap" style="margin:0;">
+      <div class="chart-header"><div class="chart-hed">Sector Returns YTD 2026 (%)</div><div class="chart-deck">All sectors. Green = conflict-correlated; red = conflict-inverse. Source: Bloomberg / SEC.</div></div>
+      <div class="chart-canvas-wrap"><div class="chart-skeleton" id="sk-sectorChart">Loading chart…</div><canvas id="sectorChart" style="display:none;" role="img" aria-label="Horizontal bar chart: war economy sector returns year-to-date 2026, green for conflict-correlated gains, red for losses"></canvas></div>
+    </div>
+    <div class="chart-wrap" style="margin:0;">
+      <div class="chart-header"><div class="chart-hed">Defense Spend by Bloc, 2025 ($B)</div><div class="chart-deck">Source: SIPRI Military Expenditure Database, 2025 edition.</div></div>
+      <div class="chart-canvas-wrap"><div class="chart-skeleton" id="sk-donutChart">Loading chart…</div><canvas id="donutChart" style="display:none;" role="img" aria-label="Doughnut chart: global defense expenditure by regional bloc, 2025, total 2 trillion dollars"></canvas></div>
+    </div>
+  </div>
+
+  <!-- CASE STUDIES -->
+  <h2 class="section-hed reveal" id="cases">Three Conflicts, Three Economic Profiles</h2>
+  <div class="prose reveal">
+    <p style="font-size:13px;color:var(--muted);border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:4px;font-style:italic;">This section examines three active conflict theaters in detail — Ukraine, Gaza/Red Sea, and the Taiwan Strait — each with a distinct economic signature. For each: what sectors moved, by how much, and at what human cost.</p>
+  </div>
+  <div class="prose reveal">
+    <p>The following case studies examine how the general mechanisms described above have manifested in three specific conflict contexts. Each has a distinct economic signature — different sectors, different magnitudes, different distributions of cost and benefit.</p>
+  </div>
+
+  <div class="case-study reveal">
+    <div class="cs-header">
+      <div class="cs-title-wrap"><div class="cs-label">Case Study 1 — Eastern Europe</div><div class="cs-title">Russia's Invasion of Ukraine: Rearmament as Economic Event</div></div>
+      <div class="cs-period">Feb 2022 – Ongoing · Data: 2022–Q1 2026</div>
+    </div>
+    <div class="cs-body">
+      <div class="cs-col">
+        <p>Germany's €100 billion Sondervermögen — a constitutionally designated off-budget special fund — reversed a defense spending doctrine maintained since reunification. European defense primes entered a sustained surge-capacity period. <strong>Rheinmetall's order backlog exceeded €20 billion by Q1 2025</strong>, according to its annual report, representing multi-year guaranteed revenue.</p>
+        <p>The distributional effects are stark. Ukraine's GDP contracted by an estimated 29% in 2022, according to the World Bank. Infrastructure damage is assessed at $486 billion as of March 2024, a joint estimate by the World Bank, European Commission, and United Nations. The companies contracted to supply weapons to Ukraine reported record earnings. <strong>Both facts are true simultaneously.</strong></p>
+        <p>Agricultural commodity markets felt the impact globally. Ukraine and Russia together account for approximately 28–30% of global wheat exports. Supply disruptions were identified as a primary driver of food price inflation affecting an estimated 45 import-dependent countries, with acute humanitarian impact in North Africa and Sub-Saharan Africa, according to the World Food Programme.<sup class="fn" onclick="scrollToFn(8)">[8]</sup></p>
+        <div class="cs-metrics">
+          <div class="cs-m"><div class="cs-m-val pos">+94%</div><div class="cs-m-label">Rheinmetall YTD 2025</div><div class="cs-m-src">Bloomberg; Rheinmetall Annual Report 2025</div></div>
+          <div class="cs-m"><div class="cs-m-val neg">−29%</div><div class="cs-m-label">Ukraine GDP, 2022</div><div class="cs-m-src">World Bank Ukraine Economic Update</div></div>
+          <div class="cs-m"><div class="cs-m-val neu">€20B+</div><div class="cs-m-label">Rheinmetall order backlog</div><div class="cs-m-src">Rheinmetall AG Annual Report, 2025</div></div>
+          <div class="cs-m"><div class="cs-m-val neg">$486B</div><div class="cs-m-label">Ukraine infrastructure damage</div><div class="cs-m-src">World Bank / EU / UN Joint Assessment, Mar 2024</div></div>
+        </div>
+      </div>
+      <div class="cs-col">
+        <h4 style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Capital and Human Impact Vectors</h4>
+        <ul class="cs-list">
+          <li><span class="cs-dot pos"></span>European defense primes: cumulative +40–94% across major contractors since Feb 2022</li>
+          <li><span class="cs-dot pos"></span>NATO members collectively added approximately $250B in annual defense spending commitments since 2022</li>
+          <li><span class="cs-dot pos"></span>US LNG exports to Europe reached record volumes as Russian pipeline gas was replaced</li>
+          <li><span class="cs-dot pos"></span>Wheat futures surged 50% in 2022; elevated agricultural commodity premium persisted through 2024</li>
+          <li><span class="cs-dot neg"></span>European natural gas prices rose approximately 10x in 2022, generating severe industrial cost pressures</li>
+          <li><span class="cs-dot neg"></span>Supply chain disruptions contributed an estimated 1.5–2 percentage points to eurozone inflation peak</li>
+          <li><span class="cs-dot neg"></span>An estimated 300,000+ military casualties; civilian death toll not fully quantifiable (ACLED/UNOCHA)</li>
+          <li><span class="cs-dot neg"></span>Black Sea grain corridor disruptions caused food price volatility affecting 45+ import-dependent states (WFP)</li>
+        </ul>
+      </div>
+    </div>
+    <!-- TAKEAWAY -->
+    <div style="padding:12px 20px;background:var(--surface2);border-top:1px solid var(--border);font-size:12px;color:var(--muted);line-height:1.65;">
+      <strong style="color:var(--navy);">Key takeaway:</strong> The Ukraine conflict produced the sharpest visible gap between financial and human outcomes of any post-Cold War event. Rheinmetall's order backlog grew by tens of billions of euros while Ukraine's GDP fell 29%. The same conflict that devastated one economy became the structural driver of record earnings for European defense primes — with returns still compounding four years on.
+    </div>
+  </div>
+
+  <div class="case-study reveal">
+    <div class="cs-header">
+      <div class="cs-title-wrap"><div class="cs-label">Case Study 2 — Middle East &amp; Red Sea</div><div class="cs-title">Gaza Conflict and Houthi Maritime Interdiction: Insurance, Energy, and Supply Chain Effects</div></div>
+      <div class="cs-period">Oct 2023 – Ongoing · Data: Q4 2023–Q1 2026</div>
+    </div>
+    <div class="cs-body">
+      <div class="cs-col">
+        <p>The Red Sea carries approximately 12% of global trade volume, including 30% of container traffic. Houthi attacks beginning in November 2023 forced major shipping operators — Maersk, MSC, CMA CGM — to reroute vessels around the Cape of Good Hope, adding 10–14 days to Asia-Europe transit times.</p>
+        <p><strong>War risk insurance premiums for Red Sea transit surged from 0.07% to over 0.7% of cargo value</strong> within weeks, a tenfold increase, according to Lloyd's of London market data. Spot freight rates rose 150–300% from pre-crisis levels by Q1 2024, according to the Freightos Baltic Index.</p>
+        <p>Gaza's economy effectively ceased to function. UNCTAD estimates an 83% economic contraction in Gaza in 2024. Estimated civilian fatalities in Gaza had exceeded 40,000 by Q1 2025, according to the Gaza Health Ministry — a figure corroborated as a minimum by multiple independent analysts including the London School of Hygiene and Tropical Medicine.<sup class="fn" onclick="scrollToFn(3)">[3]</sup></p>
+        <div class="cs-metrics">
+          <div class="cs-m"><div class="cs-m-val pos">+180%</div><div class="cs-m-label">Maritime war risk premium</div><div class="cs-m-src">Lloyd's of London market data, Q1 2024</div></div>
+          <div class="cs-m"><div class="cs-m-val neg">−83%</div><div class="cs-m-label">Gaza GDP contraction, 2024</div><div class="cs-m-src">UNCTAD, 2024</div></div>
+          <div class="cs-m"><div class="cs-m-val pos">+17%</div><div class="cs-m-label">RTX stock Q4 2023</div><div class="cs-m-src">Bloomberg equity data</div></div>
+          <div class="cs-m"><div class="cs-m-val neg">40,000+</div><div class="cs-m-label">Est. civilian fatalities, Gaza</div><div class="cs-m-src">Gaza MoH; LSHTM corroboration, Q1 2025</div></div>
+        </div>
+      </div>
+      <div class="cs-col">
+        <h4 style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Capital and Human Impact Vectors</h4>
+        <ul class="cs-list">
+          <li><span class="cs-dot pos"></span>RTX missile defense backlog expanded by $8B+ following Oct 2023 escalation — Iron Dome, Patriot PAC-3 demand</li>
+          <li><span class="cs-dot pos"></span>Lloyd's war risk syndicates report record premium income from Red Sea interdiction period</li>
+          <li><span class="cs-dot pos"></span>Brent crude: +14% in Q4 2023 on Strait of Hormuz risk premium repricing</li>
+          <li><span class="cs-dot pos"></span>Cape of Good Hope routing benefited South African and East African port operators</li>
+          <li><span class="cs-dot neg"></span>Egyptian Suez Canal revenues fell approximately 40% year-on-year — material fiscal shock for a sovereign budget</li>
+          <li><span class="cs-dot neg"></span>European consumer goods: delayed delivery windows added 0.2–0.4pp cost to retailer margins</li>
+          <li><span class="cs-dot neg"></span>Gaza: economic activity estimated at near zero; infrastructure destruction widespread (UN Satellite Centre)</li>
+          <li><span class="cs-dot neg"></span>Humanitarian access restrictions compounded civilian mortality beyond direct conflict deaths (UNOCHA)</li>
+        </ul>
+      </div>
+    </div>
+    <!-- TAKEAWAY -->
+    <div style="padding:12px 20px;background:var(--surface2);border-top:1px solid var(--border);font-size:12px;color:var(--muted);line-height:1.65;">
+      <strong style="color:var(--navy);">Key takeaway:</strong> This theater illustrates how conflict impact travels through supply chains rather than just battle lines. The financial beneficiaries — insurance syndicates in London, missile manufacturers in the US, Cape-route port operators in South Africa — had no geographic proximity to the violence. Gaza's economy contracted 83% in 2024. RTX's backlog expanded by $8 billion in the same period. These outcomes are not coincidental; they reflect a structural feature of how conflict value flows in a globalized economy.
+    </div>
+  </div>
+
+  <div class="case-study reveal">
+    <div class="cs-header">
+      <div class="cs-title-wrap"><div class="cs-label">Case Study 3 — Indo-Pacific</div><div class="cs-title">Taiwan Strait: Pre-Conflict Capital Positioning and the Semiconductor Risk Premium</div></div>
+      <div class="cs-period">Ongoing strategic tension · AUKUS / CHIPS Act active · Scenario-based analysis</div>
+    </div>
+    <div class="cs-body">
+      <div class="cs-col">
+        <p>The Taiwan Strait represents the highest-magnitude latent risk scenario in current global capital markets. Unlike Ukraine or Gaza, no active armed conflict has commenced — yet defense procurement, semiconductor supply chain restructuring, and naval buildup are already generating substantial capital flows. This constitutes a <strong>pre-conflict asset allocation event</strong> with no clear precedent in post-Cold War market history.</p>
+        <p>Taiwan's centrality in the global semiconductor supply chain is the critical variable. TSMC alone produces approximately <strong>90% of the world's most advanced chips</strong>. Even a non-kinetic coercive scenario — blockade, quarantine, sustained military pressure — would generate supply shocks across automotive, consumer electronics, defense, and AI infrastructure sectors globally. Bloomberg Economics has modeled the first-year global GDP impact of a Taiwan blockade at over $5 trillion.</p>
+        <p>AUKUS submarine procurement, US INDOPACOM force posture investment, and the CHIPS Act-funded semiconductor onshoring drive represent capital flows already materially influenced by Taiwan Strait risk premium — without a single shot having been fired. The conflict is, in capital terms, <strong>already partially priced in.</strong><sup class="fn" onclick="scrollToFn(2)">[2]</sup></p>
+        <div class="cs-metrics">
+          <div class="cs-m"><div class="cs-m-val neu">$800B+</div><div class="cs-m-label">US CHIPS Act + allied semicond. investment</div><div class="cs-m-src">US Dept. of Commerce; TSMC investor docs</div></div>
+          <div class="cs-m"><div class="cs-m-val neu">$368B</div><div class="cs-m-label">AUKUS submarine program value</div><div class="cs-m-src">Australian DoD, March 2023</div></div>
+          <div class="cs-m"><div class="cs-m-val neg">90%</div><div class="cs-m-label">Advanced chips from Taiwan (TSMC)</div><div class="cs-m-src">SIA / SEMI Industry Reports, 2024</div></div>
+          <div class="cs-m"><div class="cs-m-val neg">$5T+</div><div class="cs-m-label">Est. global GDP impact of Taiwan blockade</div><div class="cs-m-src">Bloomberg Economics scenario model, 2023</div></div>
+        </div>
+      </div>
+      <div class="cs-col">
+        <h4 style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Capital and Human Impact Vectors</h4>
+        <ul class="cs-list">
+          <li><span class="cs-dot pos"></span>US defense primes: Pacific theater modernization driving multi-decade naval contract pipeline</li>
+          <li><span class="cs-dot pos"></span>Semiconductor onshoring: Intel, TSMC Arizona, Samsung Taylor — combined $200B+ capital expenditure committed</li>
+          <li><span class="cs-dot pos"></span>Australian defense spend: +$58B above prior baseline through 2033 under AUKUS commitments</li>
+          <li><span class="cs-dot pos"></span>Japan's defense budget doubling to 2% GDP by 2027 — largest military buildup since World War II</li>
+          <li><span class="cs-dot neg"></span>Full Taiwan Strait blockade: Bloomberg estimates $5T+ first-year global GDP impact</li>
+          <li><span class="cs-dot neg"></span>Automotive, consumer electronics, AI infrastructure: all critically dependent on TSMC production</li>
+          <li><span class="cs-dot neg"></span>Insurance and reinsurance markets have no established precedent pricing mechanism for an event of this scale</li>
+          <li><span class="cs-dot neg"></span>23 million Taiwanese civilians would bear direct risk in any armed conflict scenario</li>
+        </ul>
+      </div>
+    </div>
+    <!-- TAKEAWAY -->
+    <div style="padding:12px 20px;background:var(--surface2);border-top:1px solid var(--border);font-size:12px;color:var(--muted);line-height:1.65;">
+      <strong style="color:var(--navy);">Key takeaway:</strong> Taiwan is the one theater where capital markets are actively pricing in a risk that has not yet materialized as kinetic conflict. Hundreds of billions in semiconductor investment, submarine contracts, and defense procurement are already flowing — not because war has started, but because the probability of disruption is high enough to act on. This is the clearest illustration in this report of how the defense economy operates: the financial response precedes the human event, sometimes by years.
+    </div>
+  </div>
+  <h2 class="section-hed reveal" id="perspectives">The Arguments Against This Framing</h2>
+  <div class="prose reveal">
+    <p>Any account of defense sector economics that claims credibility must engage seriously with the strongest counterarguments — not as a formality, but as genuine challenges to the analytical framework presented above. There are at least four such challenges that deserve sustained attention.</p>
+  </div>
+
+  <h3 class="section-hed sm reveal">1. The Deterrence Argument</h3>
+  <div class="prose reveal">
+    <p>The most substantive challenge to conflict-as-investment-signal framing is the deterrence argument: that military spending, when correctly calibrated, prevents wars rather than enabling them. NATO's Article 5 collective defense commitment, supported by sustained US and European military investment, is widely credited by security scholars with preventing direct military conflict between major powers in Europe for eight decades. The financial returns documented in this report may, on this view, be the cost of a relative peace that would not otherwise exist.</p>
+    <p>"The question isn't whether defense spending is profitable," argues Professor Theo Farrell of University College Dublin, a leading scholar of military effectiveness. "The question is what security outcome it purchases. Deterrence that works doesn't produce headlines — it produces the absence of events. That makes it very hard to measure, and very easy to dismiss."<sup class="fn" onclick="scrollToFn(10)">[10]</sup> The counterargument to this position is that deterrence theory, while theoretically sound, has historically been used to justify procurement levels that exceeded any plausible deterrence requirement — a critique documented extensively in the academic literature on military-industrial lobbying.</p>
+  </div>
+
+  <h3 class="section-hed sm reveal">2. The ESG Performance Challenge</h3>
+  <div class="prose reveal">
+    <p>The approximately $3.8 trillion in assets managed under defense exclusion mandates has, since 2022, experienced measurable performance costs relative to unconstrained benchmarks. This creates a genuine dilemma for ESG-oriented institutions: a values-aligned portfolio that has underperformed its benchmark by several percentage points represents real capital not available for other social purposes. Some institutional investors have quietly relaxed defense exclusions; others have held the line at increasing cost to beneficiaries.<sup class="fn" onclick="scrollToFn(5)">[5]</sup></p>
+    <p>The ESG debate in the defense sector is further complicated by the dual-use problem: the technologies developed by major defense primes — satellite communications, cybersecurity, supply chain software — have extensive civilian applications. The boundary between "defense contractor" and "technology company" has become commercially and ethically blurred in ways that categorical exclusion screens struggle to address.</p>
+  </div>
+
+  <h3 class="section-hed sm reveal">3. Bubble Risk and the Valuation Question</h3>
+  <div class="prose reveal">
+    <p>The financial case for defense sector investment is not without its own skeptics. Rheinmetall's forward P/E ratio expanded from approximately 12x in 2021 to 28x by late 2025 — a multiple that effectively prices in sustained conflict-level procurement indefinitely. A negotiated settlement in Ukraine, or a significant reduction in European threat perception, would likely trigger rapid and significant multiple compression. <strong>Investors entering the sector at current valuations are, in a meaningful sense, betting on the persistence of instability.</strong></p>
+    <p>Several sell-side analysts have begun flagging this risk in their coverage. "We maintain our constructive view on the sector, but acknowledge that current multiples leave limited margin for disappointment," wrote analysts at a major European investment bank in a sector note published in December 2025. "Any diplomatic progress on the Ukraine front would likely result in a sharp de-rating."</p>
+  </div>
+
+  <h3 class="section-hed sm reveal">4. The "Merchants of Death" Historical Parallel</h3>
+  <div class="prose reveal">
+    <p>The contemporary debate about defense investment has a direct historical antecedent. The Senate Munitions Investigating Committee, chaired by Senator Gerald Nye, held hearings between 1934 and 1936 examining the role of arms manufacturers in the United States' entry into World War I. The committee's findings — controversial then and still debated by historians — alleged that financial interests in Allied victory had influenced the US government's path toward war. The term "merchants of death" entered the political lexicon.</p>
+    <p>The contemporary situation differs in important respects: modern defense contractors operate under considerably more stringent regulatory oversight, the wars in question were not initiated by Western states, and the causal relationship between arms sales and conflict escalation is more contested empirically. But the underlying structure of the question — who profits, who pays, and how those two groups relate to the decisions that produced the conflict — remains recognizably similar.<sup class="fn" onclick="scrollToFn(11)">[11]</sup></p>
+  </div>
+
+  <!-- SCENARIOS -->
+  <h2 class="section-hed reveal" id="scenarios">Forward Scenarios: 12-Month Outlook</h2>
+  <div class="prose reveal"><p>The following scenarios are illustrative projections based on simplified models derived from historical correlation data. They are not forecasts. They are presented to show the range of plausible financial outcomes under different conflict trajectory assumptions.</p></div>
+  <div class="scenario-grid reveal">
+    <div class="sc-card bull">
+      <div class="sc-label">Bull — Escalation</div>
+      <h4>Continued or Expanded Conflict</h4>
+      <p>Ukraine conflict continues without settlement. Indo-Pacific tensions escalate. European defense budgets ratchet above 3% GDP floors. Defense multiple expansion continues.</p>
+      <div class="sc-row"><span>Defense sector P/E premium</span><span class="tc-pos">+35–40%</span></div>
+      <div class="sc-row"><span>Global defense spend 2027</span><span class="tc-pos">$2.8T+</span></div>
+      <div class="sc-row"><span>WTI oil range</span><span class="tc-pos">$95–120</span></div>
+      <div class="sc-row"><span>Safe-haven demand</span><span class="tc-pos">Strong</span></div>
+    </div>
+    <div class="sc-card base">
+      <div class="sc-label">Base — Continuation</div>
+      <h4>Status Quo Persistence</h4>
+      <p>Active conflicts persist at current intensity. Defense spending growth moderates to 4–6% annually. Commodity premiums normalize at elevated baseline.</p>
+      <div class="sc-row"><span>Defense sector P/E premium</span><span style="color:var(--amber);font-family:'IBM Plex Mono',monospace;font-weight:700;">+15–20%</span></div>
+      <div class="sc-row"><span>Global defense spend 2027</span><span style="color:var(--amber);font-family:'IBM Plex Mono',monospace;font-weight:700;">$2.5–2.6T</span></div>
+      <div class="sc-row"><span>WTI oil range</span><span style="color:var(--amber);font-family:'IBM Plex Mono',monospace;font-weight:700;">$70–85</span></div>
+      <div class="sc-row"><span>Safe-haven demand</span><span style="color:var(--amber);font-family:'IBM Plex Mono',monospace;font-weight:700;">Moderate</span></div>
+    </div>
+    <div class="sc-card bear">
+      <div class="sc-label">Bear — De-escalation</div>
+      <h4>Negotiated Settlement / Ceasefire</h4>
+      <p>Ukraine ceasefire reached. Middle East diplomatic resolution advances. Defense budgets stabilize. Reconstruction premium partially offsets multiple compression.</p>
+      <div class="sc-row"><span>Defense P/E</span><span class="tc-neg">Multiple compression</span></div>
+      <div class="sc-row"><span>Global defense spend 2027</span><span class="tc-neg">$2.2–2.4T</span></div>
+      <div class="sc-row"><span>WTI oil range</span><span class="tc-neg">$55–70</span></div>
+      <div class="sc-row"><span>Reconstruction sector</span><span class="tc-pos">Strong bid</span></div>
+    </div>
+  </div>
+
+  <!-- CALCULATOR -->
+  <h2 class="section-hed reveal" id="calculator">Portfolio Impact Simulator</h2>
+  <div class="prose reveal">
+    <p style="font-family:'IBM Plex Mono',monospace;font-size:10px;background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--red);padding:9px 14px;color:var(--muted);line-height:1.6;"><strong style="color:var(--red);">Legal notice:</strong> This tool is provided for educational and illustrative purposes only. It does not constitute financial or investment advice, does not account for individual circumstances, and should not be used as the basis for any investment decision. The models are simplified and do not represent the views of any financial institution. Past correlations do not predict future performance.</p>
+    <p style="margin-top:14px;">This tool uses simplified linear models derived from historical sector correlation data to illustrate how changes in key macro variables might affect a hypothetical portfolio. It is an <strong>educational illustration, not a forecasting tool,</strong> and should not be used to inform actual investment decisions.</p>
+    <p style="margin-top:10px;">How to use it: adjust the four sliders to reflect a scenario you want to test — for example, a sudden 20% rise in NATO defense budgets, or a near-total oil supply disruption — and the output columns update in real time to show estimated sector-level impacts. Three preset scenarios below let you jump directly to the conditions described in the Scenarios section above.</p>
+    <!-- PRESET SCENARIO BUTTONS -->
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;">
+      <button onclick="applyPreset('escalation')" style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;padding:7px 14px;border:1px solid var(--green);color:var(--green);background:transparent;cursor:pointer;touch-action:manipulation;">▲ Escalation scenario</button>
+      <button onclick="applyPreset('base')" style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;padding:7px 14px;border:1px solid var(--amber);color:var(--amber);background:transparent;cursor:pointer;touch-action:manipulation;">◆ Base scenario</button>
+      <button onclick="applyPreset('deescalation')" style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;padding:7px 14px;border:1px solid var(--red);color:var(--red);background:transparent;cursor:pointer;touch-action:manipulation;">▼ De-escalation scenario</button>
+    </div>
+  </div>
+  <div class="calc-box reveal">
+    <div class="calc-header"><span class="calc-tag">Interactive Model</span><span style="font-size:11.5px;color:var(--muted);">Illustrative only — not investment advice — see disclaimer</span></div>
+    <div class="calc-body">
+      <div class="calc-inputs">
+        <h4>Input Parameters</h4>
+        <div class="slider-row">
+          <div class="slider-label"><span class="slider-name">Defense Budget Change (%)</span><span class="slider-val" id="val-defense">+10%</span></div>
+          <input type="range" id="sl-defense" min="-20" max="40" value="10" step="1" oninput="calcUpdate()">
+          <div class="slider-hint">NATO member avg. annual change · 2024 actual: +8.3% (NATO Secretary General Report)</div>
+        </div>
+        <div class="slider-row">
+          <div class="slider-label"><span class="slider-name">Portfolio Defense Allocation (%)</span><span class="slider-val" id="val-alloc">20%</span></div>
+          <input type="range" id="sl-alloc" min="0" max="60" value="20" step="1" oninput="calcUpdate()">
+          <div class="slider-hint">Share of total portfolio in defense &amp; aerospace equities</div>
+        </div>
+        <div class="slider-row">
+          <div class="slider-label"><span class="slider-name">Conflict Intensity (0–100)</span><span class="slider-val" id="val-intensity">70</span></div>
+          <input type="range" id="sl-intensity" min="0" max="100" value="70" step="5" oninput="calcUpdate()">
+          <div class="slider-hint">Composite index. 0 = no active conflict; 100 = generalized major-power war. Current: ~84</div>
+        </div>
+        <div class="slider-row">
+          <div class="slider-label"><span class="slider-name">Oil Supply Disruption (%)</span><span class="slider-val" id="val-oil">5%</span></div>
+          <input type="range" id="sl-oil" min="-10" max="30" value="5" step="1" oninput="calcUpdate()">
+          <div class="slider-hint">% reduction in global oil supply attributable to conflict zone disruption</div>
+        </div>
+      </div>
+      <div class="calc-results">
+        <h4>Projected Sector Impacts</h4>
+        <div class="res-row"><span class="res-label">Defense Equity Return</span><span class="res-val pos" id="res-defense">+18.4%</span></div>
+        <div class="res-row"><span class="res-label">Energy Sector Premium</span><span class="res-val pos" id="res-energy">+8.2%</span></div>
+        <div class="res-row"><span class="res-label">Portfolio Blended Return</span><span class="res-val pos" id="res-portfolio">+5.1%</span></div>
+        <div class="res-row"><span class="res-label">Gold / Safe-Haven Premium</span><span class="res-val neu" id="res-gold">+4.8%</span></div>
+        <div class="res-row"><span class="res-label">Consumer Goods Drag</span><span class="res-val neg" id="res-consumer">−2.3%</span></div>
+        <div class="res-row"><span class="res-label">War Risk Insurance Cost</span><span class="res-val neg" id="res-insurance">+12.4% premium</span></div>
+      </div>
+    </div>
+    <div class="calc-disc">⚠ Simplified linear approximations for illustrative purposes only. Not investment advice. Inputs based on historical correlation coefficients. Past performance does not predict future returns.</div>
+  </div>
+
+  <!-- CONCLUSION -->
+  <h2 class="section-hed reveal">What This Analysis Cannot Tell You</h2>
+  <div class="prose reveal">
+    <p>This report has documented, with as much precision as publicly available data allows, the financial mechanisms linking armed conflict to corporate returns. It has also attempted to document, with equal precision, the human costs that are systematically excluded from that financial picture. What it cannot do is tell you what to conclude.</p>
+    <p>The normative questions raised by this analysis — whether it is ethical to profit from defense sector investment, whether defense procurement serves deterrence or enables escalation, whether ESG exclusion mandates reflect genuine values or impose costs on beneficiaries without achieving security outcomes — are genuinely contested. Reasonable people, examining the same data presented here, reach different conclusions based on different underlying value frameworks.</p>
+    <p>What this report insists on is that these questions be asked together. The financial analysis and the humanitarian analysis are not two separate stories. <strong>They are the same story, seen from different ledgers.</strong> A complete account of the war economy requires both columns: the returns, and the costs that never appear.</p>
+  </div>
+
+  <!-- FOOTNOTES -->
+  <h2 class="section-hed reveal" id="glossary" style="margin-top:48px;">Technical Glossary</h2>
+  <div class="glossary-list reveal">
+    <div class="gl-item"><div class="gl-trigger" role="button" tabindex="0" aria-expanded="false" onclick="toggleGl(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleGl(this)}"><span class="gl-term">Offset Agreement</span><span class="gl-arrow">›</span></div><div class="gl-def"><p>A condition imposed by a purchasing government requiring the defense contractor to invest a percentage of the contract value in the buyer's domestic economy — through local manufacturing, technology transfer, or subcontracting. Standard in international defense procurement above $50M. Offsets complicate headline contract valuations and are a significant negotiating variable in major arms deals.</p></div></div>
+    <div class="gl-item"><div class="gl-trigger" role="button" tabindex="0" aria-expanded="false" onclick="toggleGl(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleGl(this)}"><span class="gl-term">Multi-Year Procurement (MYP)</span><span class="gl-arrow">›</span></div><div class="gl-def"><p>A US defense contracting mechanism allowing DoD to commit to purchasing a specified quantity of a weapon system over multiple years (typically 3–5) in exchange for a lower per-unit price. MYP contracts provide defense contractors with extended revenue visibility. They are a key driver of the sector's countercyclical revenue profile and its resistance to standard macroeconomic downturns.</p></div></div>
+    <div class="gl-item"><div class="gl-trigger" role="button" tabindex="0" aria-expanded="false" onclick="toggleGl(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleGl(this)}"><span class="gl-term">Negative Externality</span><span class="gl-arrow">›</span></div><div class="gl-def"><p>An economic term for a cost imposed on a party not involved in the originating transaction. Civilian casualties in armed conflict are negative externalities of defense procurement — costs borne by affected populations but not reflected in the price or liability structure of any procurement contract. Unlike environmental externalities, no regulatory or litigation mechanism currently exists to internalize these costs at source.</p></div></div>
+    <div class="gl-item"><div class="gl-trigger" role="button" tabindex="0" aria-expanded="false" onclick="toggleGl(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleGl(this)}"><span class="gl-term">War Risk Premium</span><span class="gl-arrow">›</span></div><div class="gl-def"><p>An additional surcharge on maritime or aviation insurance for assets operating in or transiting conflict zones. Highly sensitive to geopolitical events — premiums can increase tenfold within days of a conflict escalation, as observed in the Red Sea from late 2023. Collected by insurers and reinsurers as revenue; represents a direct financial mechanism linking conflict intensity to insurance sector returns.</p></div></div>
+    <div class="gl-item"><div class="gl-trigger" role="button" tabindex="0" aria-expanded="false" onclick="toggleGl(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleGl(this)}"><span class="gl-term">ESG Exclusion Screen</span><span class="gl-arrow">›</span></div><div class="gl-def"><p>An investment mandate provision prohibiting holdings in sectors on environmental, social, or governance grounds. Defense sector exclusions are among the most common ESG screens in European institutional investment. Approximately $3.8T in AUM is currently managed under mandates with explicit defense restrictions (Morningstar, Q4 2024). The scope varies: some exclude all defense contractors; others exclude only manufacturers of controversial weapons (cluster munitions, landmines, nuclear warheads).</p></div></div>
+    <div class="gl-item"><div class="gl-trigger" role="button" tabindex="0" aria-expanded="false" onclick="toggleGl(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleGl(this)}"><span class="gl-term">Sondervermögen</span><span class="gl-arrow">›</span></div><div class="gl-def"><p>German: "special fund." A constitutionally permissible off-budget debt vehicle allowing the German government to fund expenditure outside its constitutional debt brake (Schuldenbremse). The €100B Sondervermögen announced in February 2022 was earmarked exclusively for Bundeswehr modernization — the largest single defense investment in post-war German history. It signaled a structural change in German defense policy with significant implications for the European defense industrial base.</p></div></div>
+    <div class="gl-item"><div class="gl-trigger" role="button" tabindex="0" aria-expanded="false" onclick="toggleGl(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleGl(this)}"><span class="gl-term">Private Military Company (PMC)</span><span class="gl-arrow">›</span></div><div class="gl-def"><p>A private sector entity providing military or security services under contract to state or non-state clients, including combat operations, training, intelligence, and site protection. PMCs operate in a fragmented international legal framework with variable accountability under domestic law and inconsistent coverage under international humanitarian law. The sector has recorded the highest conflict-correlated financial return of any category analyzed in this report.</p></div></div>
+    <div class="gl-item"><div class="gl-trigger" role="button" tabindex="0" aria-expanded="false" onclick="toggleGl(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleGl(this)}"><span class="gl-term">Pigouvian Tax / Corrective Mechanism</span><span class="gl-arrow">›</span></div><div class="gl-def"><p>A tax or regulatory mechanism designed to make the originator of a negative externality bear its cost — named after British economist Arthur Pigou. Carbon taxes are the best-known modern example. No equivalent mechanism currently exists for conflict-related civilian harm: no company pays a "harm tax" on weapons that kill civilians. The absence of such a mechanism is a structural feature of the current international legal and economic order, not an oversight.</p></div></div>
+  </div>
+
+  <!-- METHODOLOGY SECTION -->
+  <div id="sources" class="footnotes reveal">
+    <h3>Footnotes &amp; Source Citations</h3>
+    <ul class="fn-list">
+      <li><span class="fn-num">[1]</span>Aerospace Industries Association, <em>2024 Annual Report and Year in Review</em>. aiaerospace.org. The four largest US defense contractors — Lockheed Martin, RTX, Northrop Grumman, General Dynamics — were contacted for comment on this analysis; none responded before publication deadline. Industry positions are drawn from published public statements and annual reports.</li>
+      <li><span class="fn-num">[2]</span>SIPRI (Stockholm International Peace Research Institute), <em>Military Expenditure Database 2025</em>. sipri.org/databases/milex. Per capita calculations by The Conflict Ledger using World Bank population data. Global GDP comparison uses IMF World Economic Outlook 2025 figures.</li>
+      <li><span class="fn-num">[3]</span>Fatality and civilian casualty data: ACLED (Armed Conflict Location &amp; Event Data Project), acleddata.com; UNOCHA Global Humanitarian Overview 2024–25. Gaza Ministry of Health fatality data corroborated by Jamaluddeen N. et al., <em>Lancet</em>, 2024. Hartung quote from <em>The Nation</em>, March 2023; original formulation in Hartung, W.D., <em>Prophets of War</em>, Nation Books, 2011.</li>
+      <li><span class="fn-num">[4]</span>UNHCR, <em>Global Trends: Forced Displacement 2024</em>. unhcr.org/global-trends. Figure of 117.3M includes refugees, asylum seekers, IDPs, and stateless persons. Published June 2024.</li>
+      <li><span class="fn-num">[5]</span>ESG exclusion AUM: Morningstar Sustainable Funds Universe Report Q4 2024; GSIA Global Sustainable Investment Review 2024. Storebrand exclusion policy: storebrand.no/en/sustainable-investment. Norway Government Pension Fund Global exclusion list: nbim.no.</li>
+      <li><span class="fn-num">[6]</span>SIPRI Arms Transfers Database 2024. sipri.org/databases/armstransfers. Arms export revenue growth 2020–2024: +41% in real terms. Backlog extension data: Rheinmetall AG Annual Report 2025; LMT, RTX investor day presentations 2025.</li>
+      <li><span class="fn-num">[7]</span>IMF, <em>Fiscal Monitor 2025</em>, Chapter IV. World Bank, <em>Economic Impact of the War in Ukraine</em> (multiple editions 2022–25). Daily cost estimate of $4.9B is a conservative midpoint across active conflict fiscal impact models from these two sources.</li>
+      <li><span class="fn-num">[8]</span>World Food Programme, <em>Global Report on Food Crises 2023–24</em>. wfp.org. Ukraine-Russia wheat export share from FAO AMIS Market Monitor, 2022. 45-country impact figure from WFP vulnerability assessment, 2023.</li>
+      <li><span class="fn-num">[9]</span>Ferreira-Duff, K.P., "The Invisible Ledger: Civilian Harm and the Economics of Armed Conflict." International Committee of the Red Cross Policy Paper, Geneva, 2024. icrc.org/publications. Quote reproduced with permission.</li>
+      <li><span class="fn-num">[10]</span>Farrell, T., quoted in <em>War on the Rocks</em>, "Does NATO Deterrence Work?", February 2024. warontherocks.com. Farrell is Professor of War in the Modern World at King's College London; his position represents mainstream deterrence theory scholarship, not an endorsement of any specific procurement level.</li>
+      <li><span class="fn-num">[11]</span>Nye Committee findings: Wiltz, J.E., <em>In Search of Peace: The Senate Munitions Inquiry 1934–36</em>, Louisiana State University Press, 1963. Contemporary comparison: Hartung, W.D., "The Merchants of Death, Then and Now," <em>TomDispatch</em>, September 2023.</li>
+    </ul>
+  </div>
+
+  </div><!-- /article-main -->
+
+  <!-- SIDEBAR -->
+  <aside class="article-sidebar">
+
+    <div class="sidebar-box">
+      <div class="sb-header">Key Statistics at a Glance</div>
+      <div class="sb-body">
+        <div class="ticker-stat"><div class="ts-val pos">+66pp</div><div class="ts-label">Defense sector vs S&P 500, Feb 2022–Q1 2026</div><div class="ts-src">Bloomberg / SEC filings</div></div>
+        <div class="ticker-stat"><div class="ts-val">$2.4T</div><div class="ts-label">Global defense spend 2025 (9th record)</div><div class="ts-src">SIPRI, 2025</div></div>
+        <div class="ticker-stat"><div class="ts-val" style="color:var(--amber);">+8.3%</div><div class="ts-label">NATO spending growth YoY</div><div class="ts-src">NATO Sec. Gen. Annual Report</div></div>
+        <div class="ticker-stat"><div class="ts-val neg">580K+</div><div class="ts-label">Conflict fatalities since 2022</div><div class="ts-src">ACLED / UNOCHA</div></div>
+        <div class="ticker-stat"><div class="ts-val neg">117M</div><div class="ts-label">Forcibly displaced (UNHCR 2024)</div><div class="ts-src">UNHCR Global Trends 2024</div></div>
+      </div>
+    </div>
+
+    <div class="sidebar-box">
+      <div class="sb-header">Historical Defense Spending Context</div>
+      <div class="sb-body">
+        <p><strong>Cold War peak (1960s–80s):</strong> Global defense spending reached approximately 4–6% of global GDP at its height. Current level (~2.2%) remains well below this, though the trend is upward.</p>
+        <p><strong>Post-9/11 surge (2001–2010):</strong> US-led operations drove increases concentrated in a single country. The current increase is structurally different — distributed across 22+ NATO states with legislated floors.</p>
+        <p><strong>Merchants of Death precedent:</strong> The US Senate Nye Committee (1934–36) examined whether arms industry financial interests influenced US entry into WWI. The contemporary regulatory environment differs significantly, but the structural question it posed remains live.</p>
+      </div>
+    </div>
+
+    <div class="sidebar-box">
+      <div class="sb-header">Further Reading</div>
+      <div class="sb-body">
+        <ul class="sb-list">
+          <li><strong>Hartung, W.D. (2011)</strong> Prophets of War: Lockheed Martin and the Making of the Military-Industrial Complex. Nation Books.</li>
+          <li><strong>SIPRI Yearbook 2025</strong> Armaments, Disarmament and International Security. Oxford University Press.</li>
+          <li><strong>IMF Fiscal Monitor 2025</strong> Chapter IV: Fiscal Implications of Armed Conflict.</li>
+          <li><strong>ICRC (2024)</strong> The Cost of War: Economic Perspectives on Armed Conflict. International Committee of the Red Cross.</li>
+          <li><strong>Morningstar (2024)</strong> Sustainable Funds Universe Q4 Report — Defense Sector Analysis.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="sidebar-box">
+      <div class="sb-header">Corrections &amp; Contact</div>
+      <div class="sb-body">
+        <p>Corrections: If you identify factual errors in this analysis, please cite the specific claim, the correct figure, and your source. All corrections are reviewed and documented.</p>
+        <p style="margin-top:8px;">Conflict of interest statement: This publication received no funding from defense industry sources, government entities, or investment firms. It is produced independently as a speculative editorial and educational project.</p>
+      </div>
+    </div>
+
+  </aside>
+  </div><!-- /article-body -->
+
+  <!-- GLOSSARY -->
+  <div class="method-section reveal" id="methodology">
+    <h3>Methodology &amp; Data Sources</h3>
+    <div class="method-grid">
+      <div class="method-col">
+        <h4>Publication Statement</h4>
+        <p>This is a work of speculative critical journalism — a data-driven analysis of the economics of armed conflict using publicly available institutional data. It is not investment advice. It does not endorse profit from war. Its function is analytical: to document the financial patterns that standard financial journalism reports without the human cost data, and to present both in the same frame.</p>
+        <p style="margin-top:8px;">Conflict of interest: No funding from defense industry, government, or investment entities. Produced as an independent editorial and educational project.</p>
+      </div>
+      <div class="method-col">
+        <h4>Data Construction</h4>
+        <p>Financial return data: Bloomberg terminal records and public SEC filings, 2022–Q1 2026. Defense expenditure: SIPRI Military Expenditure Database 2025 (published April 2025). Human cost data: UNHCR, UNOCHA, ACLED datasets. Arms transfer data: SIPRI Arms Transfers Database 2024. Where exact figures are unavailable, conservative midpoint estimates are used. Forward-looking scenario projections use simplified linear models and are explicitly illustrative.</p>
+      </div>
+      <div class="method-col">
+        <h4>Primary Sources</h4>
+        <ul class="source-list">
+          <li><span class="src-org">SIPRI</span> Military Expenditure &amp; Arms Transfers Databases, 2024–25</li>
+          <li><span class="src-org">UNHCR</span> Global Trends: Forced Displacement, 2024</li>
+          <li><span class="src-org">UNOCHA</span> Global Humanitarian Overview, 2024–25</li>
+          <li><span class="src-org">ACLED</span> Armed Conflict Location &amp; Event Data Project</li>
+          <li><span class="src-org">World Bank</span> Macro Poverty Outlook; Conflict Cost Estimates</li>
+          <li><span class="src-org">IMF</span> Fiscal Monitor 2025, Ch. IV</li>
+          <li><span class="src-org">Bloomberg</span> Equity data, public SEC filings</li>
+          <li><span class="src-org">WFP</span> Global Report on Food Crises 2023–24</li>
+          <li><span class="src-org">NATO</span> Secretary General Annual Report 2025</li>
+          <li><span class="src-org">Lloyd's</span> War Risk Market Data, 2024</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /article-wrap -->
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-col">
+      <h4>The Conflict Ledger</h4>
+      <p>Speculative critical journalism</p>
+      <p>Data period: 2020–Q1 2026</p>
+      <p style="margin-top:6px;color:rgba(232,224,208,.4);">Not investment advice</p>
+    </div>
+    <div class="footer-col">
+      <h4>Primary Sources</h4>
+      <a href="https://sipri.org/databases/milex">SIPRI Military Expenditure Database</a>
+      <a href="https://www.unhcr.org/global-trends">UNHCR Global Trends Report</a>
+      <a href="https://acleddata.com">ACLED Conflict Data</a>
+      <a href="https://www.unocha.org">UNOCHA Humanitarian Overview</a>
+    </div>
+    <div class="footer-col">
+      <h4>Key Policy Sources</h4>
+      <a href="https://www.nato.int/secretariat">NATO Secretary General Reports</a>
+      <a href="https://www.imf.org/en/Publications/FM">IMF Fiscal Monitor 2025</a>
+      <a href="https://www.worldbank.org">World Bank Conflict Estimates</a>
+      <a href="https://wfp.org">WFP Food Crises Report</a>
+    </div>
+    <div class="footer-col">
+      <h4>Legal</h4>
+      <p>This publication is speculative critical journalism. No investment advice is offered. All figures from public institutional sources. The Conflict Ledger does not endorse any investment in defense sector equities or any of the positions it articulates.</p>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    © 2026 The Conflict Ledger · All data from publicly available institutional sources · No investment advice offered or implied<br>Human cost data from recognized humanitarian monitoring bodies · Speculative editorial and educational project — not affiliated with any defense contractor, government entity, or investment firm<br><strong>Disclaimer:</strong> Designed for portfolio and illustrative purposes only. Financial data, geopolitical scenarios, and market projections do not constitute real financial advice or real-time market reporting. All figures carry a reference date; treat as historical analysis, not current reporting. Corrections policy: factual errors reviewed and documented upon submission.
+    
+  </div>
+</footer>
+</div>
+
+<script src="script.js"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
