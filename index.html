@@ -1427,6 +1427,136 @@ footer {
 @media (max-width: 600px) {
   .section-stat-grid { grid-template-columns: 1fr; }
 }
+
+/* ═══════════════════════════════════════════════
+   MARKET PULSE — Stock cards, mobile-first
+   ═══════════════════════════════════════════════ */
+.market-pulse {
+  margin: 32px 0;
+}
+.mp-header {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--navy);
+}
+.mp-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--navy); font-weight: 700;
+}
+.mp-period {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8.5px; color: var(--muted); letter-spacing: .1em;
+}
+.mp-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+@media (min-width: 600px) { .mp-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 900px) { .mp-grid { grid-template-columns: repeat(4, 1fr); } }
+
+.mp-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 12px 14px;
+  position: relative;
+  overflow: hidden;
+}
+.mp-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+}
+.mp-card.up::before   { background: var(--green); }
+.mp-card.down::before { background: var(--red); }
+
+.mp-ticker {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; font-weight: 700; letter-spacing: .12em;
+  color: var(--muted); margin-bottom: 6px; display: block;
+}
+.mp-company {
+  font-size: 11px; color: var(--text); margin-bottom: 8px;
+  line-height: 1.3; display: block; font-weight: 500;
+}
+.mp-return {
+  font-family: 'Syne', sans-serif; font-weight: 800;
+  font-size: 22px; line-height: 1; display: block; margin-bottom: 4px;
+}
+.mp-card.up   .mp-return { color: var(--green); }
+.mp-card.down .mp-return { color: var(--red); }
+.mp-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8px; color: var(--muted); letter-spacing: .08em;
+}
+.mp-sparkline {
+  margin-top: 10px; height: 28px; width: 100%;
+  opacity: 0.6;
+}
+.mp-note {
+  margin-top: 10px; padding: 8px 10px;
+  background: var(--surface2); border-left: 2px solid var(--border2);
+  font-size: 10.5px; color: var(--muted); line-height: 1.55;
+  font-style: italic;
+}
+
+/* ═══════════════════════════════════════════════
+   CONFLICT TIMELINE — horizontal scroll mobile
+   ═══════════════════════════════════════════════ */
+.conflict-timeline {
+  margin: 32px 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.conflict-timeline::-webkit-scrollbar { display: none; }
+.ct-inner {
+  display: flex;
+  gap: 0;
+  min-width: 600px;
+  position: relative;
+}
+.ct-inner::before {
+  content: '';
+  position: absolute; top: 20px; left: 0; right: 0; height: 2px;
+  background: var(--border);
+  z-index: 0;
+}
+.ct-event {
+  flex: 1; padding: 0 8px; position: relative; z-index: 1;
+  min-width: 120px;
+}
+.ct-dot {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--navy); border: 3px solid var(--surface);
+  margin: 0 auto 10px; position: relative;
+  box-shadow: 0 0 0 2px var(--navy);
+}
+.ct-dot.red   { background: var(--red);   box-shadow: 0 0 0 2px var(--red); }
+.ct-dot.green { background: var(--green); box-shadow: 0 0 0 2px var(--green); }
+.ct-dot.amber { background: var(--amber); box-shadow: 0 0 0 2px var(--amber); }
+.ct-date {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8.5px; letter-spacing: .12em;
+  color: var(--muted); text-align: center;
+  display: block; margin-bottom: 6px;
+}
+.ct-label {
+  font-size: 11px; font-weight: 600; color: var(--text);
+  text-align: center; line-height: 1.35; margin-bottom: 4px;
+}
+.ct-impact {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; color: var(--green); text-align: center;
+  letter-spacing: .06em;
+}
+.ct-impact.neg { color: var(--red); }
+
+.ct-scroll-hint {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; color: var(--muted); text-align: right;
+  margin-top: 6px; letter-spacing: .1em;
+}
+@media (min-width: 700px) { .ct-scroll-hint { display: none; } }
 </style>
 </head>
 <body>
@@ -1966,7 +2096,135 @@ footer {
     </div>
   </div>
 
-  <!-- HISTORICAL CONTEXT -->
+  
+  <!-- MARKET PULSE -->
+  <div class="market-pulse reveal">
+    <div class="mp-header">
+      <span class="mp-title">⬆ Market Pulse — Defense Sector</span>
+      <span class="mp-period">YTD 2025–Q1 2026 · Bloomberg</span>
+    </div>
+    <div class="mp-grid">
+      <div class="mp-card up">
+        <span class="mp-ticker">RHM.DE</span>
+        <span class="mp-company">Rheinmetall AG</span>
+        <span class="mp-return">+94%</span>
+        <span class="mp-label">YTD 2025</span>
+        <svg class="mp-sparkline" viewBox="0 0 80 28" preserveAspectRatio="none">
+          <polyline points="0,24 10,22 20,18 30,15 40,10 50,7 60,4 70,3 80,2" 
+            fill="none" stroke="var(--green)" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="mp-card up">
+        <span class="mp-ticker">BA.L</span>
+        <span class="mp-company">BAE Systems</span>
+        <span class="mp-return">+71%</span>
+        <span class="mp-label">Since Feb 2022</span>
+        <svg class="mp-sparkline" viewBox="0 0 80 28" preserveAspectRatio="none">
+          <polyline points="0,24 15,20 25,17 40,13 55,9 65,6 80,4"
+            fill="none" stroke="var(--green)" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="mp-card up">
+        <span class="mp-ticker">LMT</span>
+        <span class="mp-company">Lockheed Martin</span>
+        <span class="mp-return">+88%</span>
+        <span class="mp-label">Since Feb 2022</span>
+        <svg class="mp-sparkline" viewBox="0 0 80 28" preserveAspectRatio="none">
+          <polyline points="0,26 20,22 35,16 50,11 65,7 80,3"
+            fill="none" stroke="var(--green)" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="mp-card up">
+        <span class="mp-ticker">RTX</span>
+        <span class="mp-company">RTX (Raytheon)</span>
+        <span class="mp-return">+67%</span>
+        <span class="mp-label">Since Feb 2022</span>
+        <svg class="mp-sparkline" viewBox="0 0 80 28" preserveAspectRatio="none">
+          <polyline points="0,25 15,21 30,18 45,14 60,9 80,5"
+            fill="none" stroke="var(--green)" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="mp-card up">
+        <span class="mp-ticker">NOC</span>
+        <span class="mp-company">Northrop Grumman</span>
+        <span class="mp-return">+59%</span>
+        <span class="mp-label">Since Feb 2022</span>
+        <svg class="mp-sparkline" viewBox="0 0 80 28" preserveAspectRatio="none">
+          <polyline points="0,26 20,22 40,16 60,10 80,6"
+            fill="none" stroke="var(--green)" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="mp-card down">
+        <span class="mp-ticker">S&amp;P 500</span>
+        <span class="mp-company">Broad Market Index</span>
+        <span class="mp-return">+18%</span>
+        <span class="mp-label">Same period (baseline)</span>
+        <svg class="mp-sparkline" viewBox="0 0 80 28" preserveAspectRatio="none">
+          <polyline points="0,20 20,18 30,22 45,17 60,15 80,14"
+            fill="none" stroke="var(--muted)" stroke-width="2"/>
+        </svg>
+      </div>
+    </div>
+    <p class="mp-note">All returns are approximate, calculated from Bloomberg public data. Not investment advice. Past performance does not predict future returns. Source: Bloomberg terminal / SEC filings, Feb 2022–Q1 2026.</p>
+  </div>
+
+
+  <!-- CONFLICT TIMELINE -->
+  <div class="reveal" style="margin:32px 0 0;">
+    <div class="mp-header">
+      <span class="mp-title">⬤ Conflict & Market Timeline</span>
+      <span class="mp-period">Scroll → on mobile</span>
+    </div>
+    <div class="conflict-timeline">
+      <div class="ct-inner">
+        <div class="ct-event">
+          <div class="ct-dot red"></div>
+          <span class="ct-date">FEB 2022</span>
+          <div class="ct-label">Russia invades Ukraine</div>
+          <span class="ct-impact neg">Defense stocks surge</span>
+        </div>
+        <div class="ct-event">
+          <div class="ct-dot green"></div>
+          <span class="ct-date">MAR 2022</span>
+          <div class="ct-label">Germany's €100B defense fund</div>
+          <span class="ct-impact">RHM +40% in weeks</span>
+        </div>
+        <div class="ct-event">
+          <div class="ct-dot amber"></div>
+          <span class="ct-date">JUN 2022</span>
+          <div class="ct-label">NATO spending pledges</div>
+          <span class="ct-impact">Europe defense +8.3% YoY</span>
+        </div>
+        <div class="ct-event">
+          <div class="ct-dot red"></div>
+          <span class="ct-date">OCT 2023</span>
+          <div class="ct-label">Gaza conflict begins</div>
+          <span class="ct-impact neg">RTX backlog +$8B</span>
+        </div>
+        <div class="ct-event">
+          <div class="ct-dot red"></div>
+          <span class="ct-date">DEC 2023</span>
+          <div class="ct-label">Houthi Red Sea attacks</div>
+          <span class="ct-impact neg">Insurance +180%</span>
+        </div>
+        <div class="ct-event">
+          <div class="ct-dot green"></div>
+          <span class="ct-date">2025</span>
+          <div class="ct-label">Global spend hits $2.4T</div>
+          <span class="ct-impact">9th consecutive record</span>
+        </div>
+        <div class="ct-event">
+          <div class="ct-dot amber"></div>
+          <span class="ct-date">Q1 2026</span>
+          <div class="ct-label">Taiwan risk priced in</div>
+          <span class="ct-impact">CHIPS Act: $800B+</span>
+        </div>
+      </div>
+    </div>
+    <p class="ct-scroll-hint">← swipe to see full timeline →</p>
+  </div>
+
+<!-- HISTORICAL CONTEXT -->
   <h2 class="section-hed reveal" id="data">How Current Spending Compares to History</h2>
   <div class="prose reveal">
     <p>To understand the current moment, context matters. Global defense spending at $2.4 trillion represents approximately 2.2% of global GDP — below the Cold War peak of roughly 4–6% of global GDP in the 1960s–80s, but significantly above the "peace dividend" lows of the mid-2000s, when spending hovered around 2% of GDP, according to SIPRI data. The post-9/11 surge (2001–2010) raised spending substantially, but was concentrated primarily in US operations. The current increase is structurally different: it is <strong>geographically distributed</strong>, with European NATO members driving the largest proportional increases since 2022.</p>
