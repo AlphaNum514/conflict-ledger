@@ -742,6 +742,7 @@ body {
 .chart-hed { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; color: var(--navy); }
 .chart-deck { font-size: 12px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
 .chart-src { font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; color: var(--muted2); margin-top: 8px; }
+.chart-canvas-wrap, .s-chart-canvas-wrap { position: relative; }
 .chart-canvas-wrap {
   position: relative; height: 240px;
   background: var(--surface); border: 1px solid var(--border); padding: 14px;
@@ -1152,3 +1153,38 @@ input[type="range"]:focus-visible { outline: 2px solid var(--navy); outline-offs
   transition: top .2s;
 }
 .skip-link:focus { top: 0; }
+
+
+/* ── CANVAS / SKELETON OVERLAY ─────────────────────────────── */
+.chart-canvas-wrap, .s-chart-canvas-wrap {
+  position: relative;
+  min-height: 220px;
+}
+/* Canvas starts transparent behind skeleton */
+.chart-canvas-wrap canvas,
+.s-chart-canvas-wrap canvas {
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  position: absolute;
+  top: 0; left: 0;
+  width: 100% !important;
+  height: 100% !important;
+}
+/* When chart is ready, fade in */
+.chart-canvas-wrap canvas.chart-ready,
+.s-chart-canvas-wrap canvas.chart-ready {
+  opacity: 1;
+  position: relative;
+}
+/* Skeleton on top while loading */
+.chart-skeleton {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 2;
+  transition: opacity 0.3s ease;
+}
+.chart-skeleton.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
