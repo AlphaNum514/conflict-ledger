@@ -2,6 +2,12 @@
 <html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
+
+<!-- Preload critical assets — browser fetches these first -->
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500&family=Syne:wght@700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" as="style">
+<link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" as="script">
+<link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" as="script">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1557,7 +1563,123 @@ footer {
   margin-top: 6px; letter-spacing: .1em;
 }
 @media (min-width: 700px) { .ct-scroll-hint { display: none; } }
+
+/* ═══════════════════════════════════════════════════════
+   INTERACTIVE CONFLICT MAP
+   ═══════════════════════════════════════════════════════ */
+.map-section { margin: 36px 0; }
+.map-header {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 10px;
+  margin-bottom: 12px;
+}
+.map-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--navy); font-weight: 700;
+}
+.map-layer-toggle {
+  display: flex; gap: 0;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.map-layer-btn {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8.5px; letter-spacing: .12em; text-transform: uppercase;
+  padding: 6px 12px; cursor: pointer; background: var(--surface);
+  color: var(--muted); border: none; transition: all .2s;
+  touch-action: manipulation;
+}
+.map-layer-btn.active {
+  background: var(--navy); color: #fff;
+}
+#conflict-map {
+  height: 420px;
+  width: 100%;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  z-index: 1;
+}
+/* Mobile: show "tap to interact" overlay */
+.map-touch-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 2;
+  background: transparent;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.map-touch-overlay span {
+  background: rgba(14,32,64,.75);
+  color: rgba(255,255,255,.85);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: .14em;
+  padding: 8px 16px;
+  pointer-events: none;
+}
+#conflict-map-wrap {
+  position: relative;
+}
+@media (max-width: 768px) {
+  .map-touch-overlay { display: flex; }
+  #conflict-map { height: 300px; }
+}
+@media (max-width: 600px) { #conflict-map { height: 320px; } }
+
+.map-legend {
+  display: flex; gap: 16px; flex-wrap: wrap;
+  margin-top: 10px; padding: 10px 14px;
+  background: var(--surface2); border: 1px solid var(--border);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; letter-spacing: .1em;
+}
+.legend-item { display: flex; align-items: center; gap: 6px; color: var(--muted); }
+.legend-dot {
+  width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* Leaflet popup custom style */
+.leaflet-popup-content-wrapper {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 0 !important;
+  box-shadow: 4px 4px 0 rgba(0,0,0,.15) !important;
+}
+.leaflet-popup-tip { background: var(--surface) !important; }
+.conflict-popup { min-width: 200px; }
+.cp-name {
+  font-family: 'Syne', sans-serif; font-weight: 700;
+  font-size: 14px; color: var(--navy); margin-bottom: 8px;
+}
+.cp-type {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--red); margin-bottom: 10px;
+}
+.cp-row {
+  display: flex; justify-content: space-between;
+  padding: 5px 0; border-bottom: 1px solid var(--border);
+  font-size: 11.5px;
+}
+.cp-row:last-child { border-bottom: none; }
+.cp-key { color: var(--muted); }
+.cp-val { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 11px; }
+.cp-val.pos { color: var(--green); }
+.cp-val.neg { color: var(--red); }
+.cp-val.neu { color: var(--amber); }
 </style>
+
+<!-- Leaflet.js — interactive maps, no API key required -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
+<!-- PWA — installable as app on mobile -->
+<link rel="manifest" href="data:application/manifest+json,%7B%0A%20%20%22name%22%3A%20%22The%20Conflict%20Ledger%22%2C%0A%20%20%22short_name%22%3A%20%22Conflict%20Ledger%22%2C%0A%20%20%22description%22%3A%20%22A%20data-driven%20investigation%20into%20the%20economics%20of%20armed%20conflict%22%2C%0A%20%20%22start_url%22%3A%20%22/conflict-ledger/%22%2C%0A%20%20%22display%22%3A%20%22standalone%22%2C%0A%20%20%22background_color%22%3A%20%22%230d1117%22%2C%0A%20%20%22theme_color%22%3A%20%22%230e2040%22%2C%0A%20%20%22orientation%22%3A%20%22portrait-primary%22%2C%0A%20%20%22icons%22%3A%20%5B%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%22src%22%3A%20%22data%3Aimage/svg%2Bxml%2C%253Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%20192%20192%27%253E%253Crect%20width%3D%27192%27%20height%3D%27192%27%20fill%3D%27%25230e2040%27/%253E%253Ctext%20x%3D%2796%27%20y%3D%27130%27%20font-family%3D%27serif%27%20font-size%3D%27100%27%20font-weight%3D%27bold%27%20fill%3D%27%2523d42b2b%27%20text-anchor%3D%27middle%27%253ECL%253C/text%253E%253C/svg%253E%22%2C%0A%20%20%20%20%20%20%22sizes%22%3A%20%22192x192%22%2C%0A%20%20%20%20%20%20%22type%22%3A%20%22image/svg%2Bxml%22%0A%20%20%20%20%7D%2C%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%22src%22%3A%20%22data%3Aimage/svg%2Bxml%2C%253Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%20512%20512%27%253E%253Crect%20width%3D%27512%27%20height%3D%27512%27%20fill%3D%27%25230e2040%27/%253E%253Ctext%20x%3D%27256%27%20y%3D%27340%27%20font-family%3D%27serif%27%20font-size%3D%27260%27%20font-weight%3D%27bold%27%20fill%3D%27%2523d42b2b%27%20text-anchor%3D%27middle%27%253ECL%253C/text%253E%253C/svg%253E%22%2C%0A%20%20%20%20%20%20%22sizes%22%3A%20%22512x512%22%2C%0A%20%20%20%20%20%20%22type%22%3A%20%22image/svg%2Bxml%22%0A%20%20%20%20%7D%0A%20%20%5D%2C%0A%20%20%22categories%22%3A%20%5B%22news%22%2C%20%22education%22%5D%2C%0A%20%20%22lang%22%3A%20%22en%22%0A%7D">
+<meta name="apple-mobile-web-app-title" content="Conflict Ledger">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%230e2040'/%3E%3Ctext x='90' y='125' font-family='serif' font-size='95' font-weight='bold' fill='%23d42b2b' text-anchor='middle'%3ECL%3C/text%3E%3C/svg%3E">
 </head>
 <body>
 
@@ -1567,7 +1689,7 @@ footer {
 
 <!-- SWITCHER BAR -->
 <div id="sw-bar">
-  <span class="sw-logo">THE CONFLICT LEDGER <span style="background:#d42b2b;color:#fff;font-size:8px;padding:1px 6px;margin-left:6px;letter-spacing:.1em;">v2.0</span></span>
+  <span class="sw-logo">THE CONFLICT LEDGER <span style="background:#d42b2b;color:#fff;font-size:8px;padding:1px 6px;margin-left:6px;letter-spacing:.1em;">v3.0</span></span>
   <div class="sw-tabs">
     <button class="sw-tab sw-active" id="tab-simple"   onclick="switchView('simple')">
       Public Edition <span class="sw-badge">Overview</span>
@@ -1992,6 +2114,7 @@ footer {
     <a class="nav-link active" href="#findings">Key Findings</a>
     <a class="nav-link" href="#analysis">Analysis</a>
     <a class="nav-link" href="#data">Data</a>
+    <a class="nav-link" href="#map">Map</a>
     <a class="nav-link" href="#cases">Case Studies</a>
     <a class="nav-link" href="#perspectives">Perspectives</a>
     <a class="nav-link" href="#scenarios">Scenarios</a>
@@ -2222,6 +2345,28 @@ footer {
       </div>
     </div>
     <p class="ct-scroll-hint">← swipe to see full timeline →</p>
+  </div>
+
+
+  <!-- INTERACTIVE CONFLICT MAP -->
+  <div class="map-section reveal" id="map">
+    <div class="map-header">
+      <span class="map-title">⬤ Active Conflict Zones — Economic Impact Map</span>
+      <div class="map-layer-toggle">
+        <button class="map-layer-btn active" onclick="setMapLayer('human')" id="btn-human">Human Cost</button>
+        <button class="map-layer-btn" onclick="setMapLayer('financial')" id="btn-financial">Financial Flow</button>
+      </div>
+    </div>
+    <div id="conflict-map-wrap">
+    <div id="conflict-map"></div>
+    <div class="map-touch-overlay"><span>↕ SCROLL PAGE &nbsp;·&nbsp; TAP MARKER TO INTERACT</span></div>
+  </div>
+    <div class="map-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#d42b2b"></div>Active conflict</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#9a6800"></div>Economic disruption</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#1a6b3a;opacity:.7"></div>Defense beneficiary</div>
+      <span style="color:var(--muted);font-size:8.5px;letter-spacing:.08em;margin-left:auto">Tap/click marker for data · Scroll to zoom</span>
+    </div>
   </div>
 
 <!-- HISTORICAL CONTEXT -->
@@ -2853,7 +2998,8 @@ footer {
 
 <script>
 /* ─── GLOBAL: VIEW SWITCHER ────────────────────────────────── */
-function switchView(v) {
+/* Explicitly expose switchView globally */
+window.switchView = function switchView(v) {
   try { localStorage.setItem('cl-view', v); } catch(e) {}
   var isRes = v === 'research';
   document.body.classList.toggle('show-research', isRes);
@@ -2861,7 +3007,7 @@ function switchView(v) {
   document.getElementById('tab-research').classList.toggle('sw-active', isRes);
   window.scrollTo(0, 0);
   if (isRes && !window._resInited) { window._resInited = true; initResearch(); }
-}
+};
 
 /* ─── SIMPLE SCRIPTS (isolated scope) ──────────────────────── */
 (function() {
@@ -3364,6 +3510,248 @@ window.applyPreset   = typeof applyPreset   !== "undefined" ? applyPreset   : nu
 window.calcUpdate    = typeof calcUpdate    !== "undefined" ? calcUpdate    : null;
 window.refreshAllCharts = typeof refreshAllCharts !== "undefined" ? refreshAllCharts : null;
 })();
+
+
+
+/* ═══════════════════════════════════════════════════════
+   INTERACTIVE CONFLICT MAP — Leaflet.js
+   ═══════════════════════════════════════════════════════ */
+var conflictMap = null;
+var humanLayers = [];
+var financialLayers = [];
+var currentMapLayer = 'human';
+
+var CONFLICT_DATA = [
+  {
+    name: 'Ukraine', lat: 49.0, lng: 31.5, type: 'Active Armed Conflict',
+    size: 38,
+    human:     { deaths: '300K+ military', displaced: '8.2M refugees', gdp: '−29% (2022)', infra: '$486B damage' },
+    financial: { winner: 'Rheinmetall +94%', contracts: '€20B+ backlog', spend: 'EU +$250B defense', note: 'Germany Sondervermögen €100B' }
+  },
+  {
+    name: 'Gaza Strip', lat: 31.4, lng: 34.4, type: 'Active Armed Conflict',
+    size: 30,
+    human:     { deaths: '40,000+ civilians', displaced: '1.9M (85% of pop)', gdp: '−83% (2024)', infra: 'Near-total destruction' },
+    financial: { winner: 'RTX +$8B backlog', contracts: 'Iron Dome contracts', spend: 'US aid $14B+', note: 'Lloyd\u2019s insurance premiums +180%' }
+  },
+  {
+    name: 'Red Sea / Suez', lat: 15.5, lng: 42.0, type: 'Maritime Disruption',
+    size: 24,
+    human:     { deaths: 'Seafarers at risk', displaced: 'N/A', gdp: 'Egypt Suez −40%', infra: 'Global shipping +2wk delay' },
+    financial: { winner: 'War insurance +180%', contracts: 'Cape route operators', spend: 'Rerouting +$200/container', note: '12% of global trade affected' }
+  },
+  {
+    name: 'Sudan', lat: 15.5, lng: 32.5, type: 'Active Armed Conflict',
+    size: 26,
+    human:     { deaths: '150K+', displaced: '10M+ (largest crisis)', gdp: '−23% (2023)', infra: 'Healthcare collapsed' },
+    financial: { winner: 'Regional arms traders', contracts: 'UAE/RSF supply lines', spend: 'Humanitarian: $2.6B gap', note: 'Underreported in financial press' }
+  },
+  {
+    name: 'Taiwan Strait', lat: 23.5, lng: 121.0, type: 'Strategic Risk Zone',
+    size: 20,
+    human:     { deaths: 'No kinetic conflict yet', displaced: '23M at risk', gdp: 'Global impact: $5T+ if blockade', infra: 'TSMC: 90% advanced chips' },
+    financial: { winner: 'CHIPS Act $800B+', contracts: 'AUKUS $368B', spend: 'Japan defense ×2 by 2027', note: 'Already priced into defense stocks' }
+  },
+  {
+    name: 'Ethiopia / Horn of Africa', lat: 9.0, lng: 40.0, type: 'Ongoing Conflict',
+    size: 18,
+    human:     { deaths: '600K+ (Tigray)', displaced: '4M+', gdp: 'IMF emergency support', infra: 'Famine conditions' },
+    financial: { winner: 'Minimal market impact', contracts: 'Low-profile arms flows', spend: 'Aid: $2.1B (2023)', note: 'Absent from financial reporting' }
+  },
+  {
+    name: 'Indo-Pacific / AUKUS', lat: -25.0, lng: 130.0, type: 'Defense Buildup',
+    size: 16,
+    human:     { deaths: 'No conflict', displaced: 'N/A', gdp: 'Australia +$58B defense', infra: 'Nuclear sub infrastructure' },
+    financial: { winner: 'GD / HII submarine contracts', contracts: 'AUKUS $368B total', spend: 'US INDOPACOM buildup', note: 'Pre-conflict capital positioning' }
+  }
+];
+
+function buildPopup(d, layer) {
+  var data = layer === 'human' ? d.human : d.financial;
+  var rows = layer === 'human'
+    ? [
+        ['Est. Deaths', d.human.deaths, 'neg'],
+        ['Displaced', d.human.displaced, 'neg'],
+        ['GDP Impact', d.human.gdp, 'neg'],
+        ['Infrastructure', d.human.infra, 'neg']
+      ]
+    : [
+        ['Market Winner', d.financial.winner, 'pos'],
+        ['Key Contracts', d.financial.contracts, 'pos'],
+        ['Capital Flow', d.financial.spend, 'neu'],
+        ['Note', d.financial.note, 'neu']
+      ];
+
+  var html = '<div class="conflict-popup">';
+  html += '<div class="cp-name">' + d.name + '</div>';
+  html += '<div class="cp-type">' + d.type + '</div>';
+  rows.forEach(function(row) {
+    html += '<div class="cp-row"><span class="cp-key">' + row[0] + '</span><span class="cp-val ' + row[2] + '">' + row[1] + '</span></div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+function initConflictMap() {
+  if (conflictMap) return;
+  if (typeof L === 'undefined') return;
+
+  var isMobile = window.innerWidth <= 768;
+  conflictMap = L.map('conflict-map', {
+    center: [25, 30],
+    zoom: isMobile ? 1 : 2,
+    zoomControl: !isMobile,
+    attributionControl: false,
+    // Mobile: disable single-finger drag so page scroll works normally
+    dragging:       !isMobile,
+    tap:            !isMobile,
+    scrollWheelZoom: false,    // never capture scroll wheel (desktop too)
+    touchZoom:      true,      // allow pinch-to-zoom on mobile
+    doubleClickZoom: true,
+  });
+
+  // Show "use two fingers" hint on mobile touch
+  if (isMobile) {
+    conflictMap.on('click', function() {
+      conflictMap.dragging.enable();
+      setTimeout(function(){ conflictMap.dragging.disable(); }, 3000);
+    });
+  }
+
+  // Dark-friendly tile layer
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 8, minZoom: 1
+  }).addTo(conflictMap);
+
+  L.control.attribution({ prefix: 'CartoDB · OSM' }).addTo(conflictMap);
+
+  // Build both layer groups
+  CONFLICT_DATA.forEach(function(d) {
+    // Human cost layer — red circles sized by conflict scale
+    var hCircle = L.circleMarker([d.lat, d.lng], {
+      radius: d.size / 2.5,
+      fillColor: '#d42b2b',
+      color: '#ff6666',
+      weight: 1.5,
+      fillOpacity: 0.65
+    }).bindPopup(buildPopup(d, 'human'), { maxWidth: 260 });
+    humanLayers.push(hCircle);
+
+    // Financial layer — green circles
+    var fCircle = L.circleMarker([d.lat, d.lng], {
+      radius: d.size / 2.5,
+      fillColor: '#1a6b3a',
+      color: '#3aaa66',
+      weight: 1.5,
+      fillOpacity: 0.65
+    }).bindPopup(buildPopup(d, 'financial'), { maxWidth: 260 });
+    financialLayers.push(fCircle);
+  });
+
+  // Show human layer by default
+  humanLayers.forEach(function(l) { l.addTo(conflictMap); });
+}
+
+function setMapLayer(layer) {
+  currentMapLayer = layer;
+  document.getElementById('btn-human').classList.toggle('active', layer === 'human');
+  document.getElementById('btn-financial').classList.toggle('active', layer === 'financial');
+
+  if (!conflictMap) return;
+
+  if (layer === 'human') {
+    financialLayers.forEach(function(l) { conflictMap.removeLayer(l); });
+    humanLayers.forEach(function(l) { l.addTo(conflictMap); });
+    // Update popups
+    humanLayers.forEach(function(l, i) {
+      l.setPopupContent(buildPopup(CONFLICT_DATA[i], 'human'));
+    });
+  } else {
+    humanLayers.forEach(function(l) { conflictMap.removeLayer(l); });
+    financialLayers.forEach(function(l) { l.addTo(conflictMap); });
+    financialLayers.forEach(function(l, i) {
+      l.setPopupContent(buildPopup(CONFLICT_DATA[i], 'financial'));
+    });
+  }
+}
+
+/* Init map when section scrolls into view */
+var mapInitObs = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e) {
+    if (e.isIntersecting) {
+      setTimeout(initConflictMap, 100);
+      mapInitObs.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.1 });
+
+document.addEventListener('DOMContentLoaded', function() {
+  var mapEl = document.getElementById('conflict-map');
+  if (mapEl) mapInitObs.observe(mapEl);
+});
+
+window.setMapLayer = setMapLayer;
+/* ══ END MAP ══════════════════════════════════════════════════ */
+</script>
+
+<script>
+/* Service Worker — enables offline mode and instant repeat loads */
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  window.addEventListener('load', function() {
+    /* Inline service worker as blob URL — no separate sw.js file needed */
+    var swCode = `
+const CACHE = 'conflict-ledger-v1';
+const ASSETS = [
+  self.location.pathname.replace('sw-inline', ''),
+  'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css',
+  'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500&family=Syne:wght@700;800&family=IBM+Plex+Mono:wght@400;500&display=swap'
+];
+
+self.addEventListener('install', function(e) {
+  e.waitUntil(
+    caches.open(CACHE).then(function(cache) {
+      return cache.addAll(ASSETS).catch(function(){});
+    })
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', function(e) {
+  e.waitUntil(
+    caches.keys().then(function(keys) {
+      return Promise.all(keys.filter(function(k){ return k !== CACHE; }).map(function(k){ return caches.delete(k); }));
+    })
+  );
+  self.clients.claim();
+});
+
+self.addEventListener('fetch', function(e) {
+  e.respondWith(
+    caches.match(e.request).then(function(cached) {
+      if (cached) return cached;
+      return fetch(e.request).then(function(response) {
+        if (!response || response.status !== 200 || response.type === 'opaque') return response;
+        var clone = response.clone();
+        caches.open(CACHE).then(function(cache){ cache.put(e.request, clone); });
+        return response;
+      }).catch(function() { return cached; });
+    })
+  );
+});
+`;
+    try {
+      var blob = new Blob([swCode], {type: 'application/javascript'});
+      var swUrl = URL.createObjectURL(blob);
+      navigator.serviceWorker.register(swUrl).then(function(reg) {
+        console.log('SW registered:', reg.scope);
+      }).catch(function(e) {
+        console.log('SW registration failed (normal on file://):', e.message);
+      });
+    } catch(e) {}
+  });
+}
 </script>
 </body>
 </html>
