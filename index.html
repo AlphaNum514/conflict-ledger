@@ -23,7 +23,7 @@
 <!-- Open Graph — controls preview on WhatsApp, LinkedIn, Twitter, iMessage -->
 <meta property="og:type"        content="article">
 <meta property="og:title"       content="The Conflict Ledger — When War Is Good Business">
-<meta property="og:description" content="Defense stocks outperformed the S&P 500 by 66pp since 2022. 580,000+ people died. This report puts both numbers in the same frame.">
+<meta property="og:description" content="Defense stocks outperformed the S&P 500 by 66pp since 2022. 620,000+ people died. This report puts both numbers in the same frame.">
 <meta property="og:url"         content="https://conflict-ledger.com">
 <meta property="og:site_name"   content="The Conflict Ledger">
 <meta property="og:image"       content="https://conflict-ledger.com/og-image.png">
@@ -34,7 +34,7 @@
 <!-- Twitter Card -->
 <meta name="twitter:card"        content="summary_large_image">
 <meta name="twitter:title"       content="The Conflict Ledger — When War Is Good Business">
-<meta name="twitter:description" content="Defense stocks outperformed the S&P 500 by 66pp since 2022. 580,000+ people died. This report puts both numbers in the same frame.">
+<meta name="twitter:description" content="Defense stocks outperformed the S&P 500 by 66pp since 2022. 620,000+ people died. This report puts both numbers in the same frame.">
 <meta name="twitter:image"       content="https://conflict-ledger.com/og-image.png">
 
 <!-- Favicon — inline SVG as data URI, no external file needed -->
@@ -43,8 +43,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=IBM+Plex+Mono:wght@400;700&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=IBM+Plex+Mono:wght@400;700&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet"></noscript>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=IBM+Plex+Mono:wght@400;700&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet">
 <script>
 // Load Chart.js with CDN fallbacks
 (function() {
@@ -249,7 +248,7 @@ section:last-of-type { border-bottom: none; }
   font-size: 22px; line-height: 1; flex-shrink: 0;
   width: 36px; text-align: center; padding-top: 1px;
 }
-
+.finding-body {}
 .finding-stat {
   font-family: var(--serif); font-weight: 700;
   font-size: 22px; line-height: 1; margin-bottom: 4px;
@@ -516,7 +515,10 @@ footer {
   .comp-bar-fill { transition: width .01s; }
 }
 
+
 /* ─── RESEARCH STYLES ───────────────────────────────────────── */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
   --bg:       #f9f8f5;
@@ -697,6 +699,8 @@ body {
 
 /* TWO-COL LAYOUT */
 .article-body { display: grid; grid-template-columns: 1fr 340px; gap: 48px; }
+.article-main {}
+.article-sidebar {}
 
 /* PROSE */
 .prose p { font-size: 15px; line-height: 1.78; color: var(--text); margin-bottom: 18px; }
@@ -808,7 +812,7 @@ tbody td:first-child { color: var(--navy); font-weight: 500; }
 /* CASE STUDY */
 .case-study { border: 1px solid var(--border); margin: 22px 0; overflow: hidden; }
 .cs-header { padding: 16px 20px; background: var(--surface2); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-start; }
-
+.cs-title-wrap {}
 .cs-label { font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--red); margin-bottom: 4px; }
 .cs-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 16px; color: var(--navy); }
 .cs-period { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); }
@@ -916,7 +920,12 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 
 .gl-arrow { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); transition: transform .25s; }
 .gl-trigger.open .gl-arrow { transform: rotate(90deg); color: var(--red); }
 .gl-trigger.open .gl-term { color: var(--red); }
-.gl-def { padding: 0 16px; max-height: 0; overflow: hidden; transition: max-height .3s ease, padding .3s; }
+.gl-def { padding: 0 16px; max-height: 0; overflow: hidden; transition: max-height .3s ease, padding .3s; 
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+  padding-top: 0;
+}
 .gl-def.open { max-height: 200px; padding: 0 16px 14px; }
 .gl-def p { font-size: 12.5px; color: var(--muted); line-height: 1.7; border-top: 1px solid var(--border); padding-top: 10px; }
 
@@ -1065,6 +1074,7 @@ footer {
   .ticker { animation-duration: 80s; will-change: auto; }
   * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
 
 /* ─── PRINT / PDF ───────────────────────────────────────────── */
 @media print {
@@ -1664,11 +1674,74 @@ footer {
 .cp-val.pos { color: var(--green); }
 .cp-val.neg { color: var(--red); }
 .cp-val.neu { color: var(--amber); }
+
+/* ── MAP PULSE ANIMATION ── */
+@keyframes conflict-pulse {
+  0%   { transform: scale(1);   opacity: 0.8; }
+  50%  { transform: scale(1.4); opacity: 0.4; }
+  100% { transform: scale(1);   opacity: 0.8; }
+}
+.leaflet-interactive.conflict-pulse {
+  animation: conflict-pulse 2s ease-in-out infinite;
+}
+
+/* ── SHARE BUTTON ── */
+.share-btn {
+  position: fixed;
+  bottom: 80px; right: 20px;
+  background: var(--navy); color: #fff;
+  border: none; border-radius: 50%;
+  width: 44px; height: 44px;
+  font-size: 18px; cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,.25);
+  z-index: 1000; display: flex;
+  align-items: center; justify-content: center;
+  touch-action: manipulation;
+  transition: transform .2s, background .2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.share-btn:hover { transform: scale(1.1); background: var(--red); }
+.share-toast {
+  position: fixed; bottom: 136px; right: 14px;
+  background: var(--navy); color: #fff;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: .1em;
+  padding: 7px 14px; z-index: 1001;
+  opacity: 0; transition: opacity .3s;
+  pointer-events: none;
+}
+.share-toast.show { opacity: 1; }
+
+/* ── READING PROGRESS ── */
+.nav-progress {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8.5px; letter-spacing: .1em;
+  color: var(--muted); margin-left: auto;
+  padding-right: 16px; white-space: nowrap;
+  display: none;
+}
+body.show-research .nav-progress { display: block; }
+
+/* ── TREND ARROWS in Key Findings ── */
+.kf-trend {
+  font-size: 10px; font-family: 'IBM Plex Mono', monospace;
+  margin-left: 6px; letter-spacing: 0;
+}
+.kf-trend.up   { color: var(--green); }
+.kf-trend.down { color: var(--red); }
+.kf-trend.same { color: var(--muted); }
+
+/* ── SECTOR TABLE MINI SPARKLINE ── */
+.mini-spark {
+  display: inline-block; width: 48px; height: 20px;
+  vertical-align: middle; margin-left: 6px;
+  opacity: 0.7;
+}
 </style>
 
 <!-- Leaflet.js — interactive maps, no API key required -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 
 <!-- PWA — installable as app on mobile -->
 <link rel="manifest" href="data:application/manifest+json,%7B%0A%20%20%22name%22%3A%20%22The%20Conflict%20Ledger%22%2C%0A%20%20%22short_name%22%3A%20%22Conflict%20Ledger%22%2C%0A%20%20%22description%22%3A%20%22A%20data-driven%20investigation%20into%20the%20economics%20of%20armed%20conflict%22%2C%0A%20%20%22start_url%22%3A%20%22/conflict-ledger/%22%2C%0A%20%20%22display%22%3A%20%22standalone%22%2C%0A%20%20%22background_color%22%3A%20%22%230d1117%22%2C%0A%20%20%22theme_color%22%3A%20%22%230e2040%22%2C%0A%20%20%22orientation%22%3A%20%22portrait-primary%22%2C%0A%20%20%22icons%22%3A%20%5B%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%22src%22%3A%20%22data%3Aimage/svg%2Bxml%2C%253Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%20192%20192%27%253E%253Crect%20width%3D%27192%27%20height%3D%27192%27%20fill%3D%27%25230e2040%27/%253E%253Ctext%20x%3D%2796%27%20y%3D%27130%27%20font-family%3D%27serif%27%20font-size%3D%27100%27%20font-weight%3D%27bold%27%20fill%3D%27%2523d42b2b%27%20text-anchor%3D%27middle%27%253ECL%253C/text%253E%253C/svg%253E%22%2C%0A%20%20%20%20%20%20%22sizes%22%3A%20%22192x192%22%2C%0A%20%20%20%20%20%20%22type%22%3A%20%22image/svg%2Bxml%22%0A%20%20%20%20%7D%2C%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%22src%22%3A%20%22data%3Aimage/svg%2Bxml%2C%253Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%20512%20512%27%253E%253Crect%20width%3D%27512%27%20height%3D%27512%27%20fill%3D%27%25230e2040%27/%253E%253Ctext%20x%3D%27256%27%20y%3D%27340%27%20font-family%3D%27serif%27%20font-size%3D%27260%27%20font-weight%3D%27bold%27%20fill%3D%27%2523d42b2b%27%20text-anchor%3D%27middle%27%253ECL%253C/text%253E%253C/svg%253E%22%2C%0A%20%20%20%20%20%20%22sizes%22%3A%20%22512x512%22%2C%0A%20%20%20%20%20%20%22type%22%3A%20%22image/svg%2Bxml%22%0A%20%20%20%20%7D%0A%20%20%5D%2C%0A%20%20%22categories%22%3A%20%5B%22news%22%2C%20%22education%22%5D%2C%0A%20%20%22lang%22%3A%20%22en%22%0A%7D">
@@ -1733,7 +1806,7 @@ footer {
         <span class="num-label">Global military spend<br>in 2025 — record high<br><em style="font-size:8px;opacity:.6;">SIPRI, April 2025</em></span>
       </div>
       <div class="num-cell">
-        <span class="num-val s-neg" data-target="580" data-suffix="K+" data-dec="0">0K+</span>
+        <span class="num-val s-neg" data-target="620" data-suffix="K+" data-dec="0">0K+</span>
         <span class="num-label">Estimated conflict deaths<br>since 2022 (84% civilian)<br><em style="font-size:8px;opacity:.6;">ACLED / UNOCHA, Dec 2025</em></span>
       </div>
     </div>
@@ -1778,8 +1851,8 @@ footer {
       <li class="finding-item s-reveal s-d1">
         <span class="finding-icon">👥</span>
         <div class="finding-body">
-          <div class="finding-stat s-neg">117M</div>
-          <div class="finding-text">117 million people are currently displaced from their homes due to conflict — the highest number ever recorded by the UN refugee agency. The previous record was set just one year earlier.</div>
+          <div class="finding-stat s-neg">122M</div>
+          <div class="finding-text">122 million people are currently displaced from their homes due to conflict — the highest number ever recorded by the UN refugee agency. The previous record was set just one year earlier.</div>
           <div class="finding-src">Source: UNHCR Global Trends Report, 2024</div>
         </div>
       </li>
@@ -1787,7 +1860,7 @@ footer {
         <span class="finding-icon">📉</span>
         <div class="finding-body">
           <div class="finding-stat s-neg">$0</div>
-          <div class="finding-text">The 580,000+ deaths since 2022 do not appear on any company's financial report. In economic terminology, they are "externalities" — real costs that are entirely paid by others, not by the companies profiting from the conflict.</div>
+          <div class="finding-text">The 620,000+ deaths since 2022 do not appear on any company's financial report. In economic terminology, they are "externalities" — real costs that are entirely paid by others, not by the companies profiting from the conflict.</div>
           <div class="finding-src">Source: ACLED; UNOCHA, 2022–2025</div>
         </div>
       </li>
@@ -1852,7 +1925,7 @@ footer {
       </div>
       <div class="panel-cell dark">
         <div class="panel-head">Human Ledger</div>
-        <div class="panel-stat">580K+</div>
+        <div class="panel-stat">620K+</div>
         <div class="panel-label">Estimated deaths since 2022.<br>Not on any balance sheet.</div>
         <div class="panel-src">ACLED / UNOCHA estimates, 2022–2025</div>
       </div>
@@ -2073,6 +2146,10 @@ footer {
 <!-- RESEARCH VIEW -->
 <div id="view-research">
 <div id="progress-bar"></div>
+
+<button class="share-btn" onclick="shareURL()" aria-label="Share this report" title="Share">⬆</button>
+<div class="share-toast" id="shareToast">Link copied!</div>
+
 <button id="scrollTop" onclick="try{window.scrollTo({top:0,behavior:'smooth'})}catch(e){window.scrollTo(0,0)}">↑ TOP</button>
 <button class="dm-toggle" id="dmBtn">☾ DARK</button>
 
@@ -2087,7 +2164,7 @@ footer {
 <!-- TICKER — FACTUAL DATA ONLY -->
 <div class="ticker-wrap" title="Hover to pause">
   <div class="ticker" aria-hidden="true">
-    <span><span class="t-sym">LMT</span> <span class="t-up">+4.7% YTD</span></span><span><span class="t-sym">NOC</span> <span class="t-up">+6.1% YTD</span></span><span><span class="t-sym">RTX</span> <span class="t-up">+3.2% YTD</span></span><span><span class="t-sym">BA</span> <span class="t-up">+2.9% YTD</span></span><span><span class="t-sym">RHEINMETALL</span> <span class="t-up">+28.4% YTD</span></span><span><span class="t-sym">BAE.L</span> <span class="t-up">+17.9% YTD</span></span><span><span class="t-sym">OIL/WTI</span> <span class="t-up">+3.8%</span></span><span><span class="t-sym">GOLD</span> <span class="t-up">+2.1%</span></span><span><span class="t-sym">NATO SPENDING</span> <span class="t-up">+8.3% YoY</span></span><span><span class="t-sym">SIPRI GLOBAL MILEX</span> $2.4T 2025</span><span><span class="t-sym">DISPLACED PERSONS</span> 117M (UNHCR 2024)</span><span style="opacity:.2;margin:0 10px">|</span><span><span class="t-sym">LMT</span> <span class="t-up">+4.7% YTD</span></span><span><span class="t-sym">NOC</span> <span class="t-up">+6.1% YTD</span></span><span><span class="t-sym">RTX</span> <span class="t-up">+3.2% YTD</span></span><span><span class="t-sym">BA</span> <span class="t-up">+2.9% YTD</span></span><span><span class="t-sym">RHEINMETALL</span> <span class="t-up">+28.4% YTD</span></span><span><span class="t-sym">BAE.L</span> <span class="t-up">+17.9% YTD</span></span><span><span class="t-sym">OIL/WTI</span> <span class="t-up">+3.8%</span></span><span><span class="t-sym">GOLD</span> <span class="t-up">+2.1%</span></span><span><span class="t-sym">NATO SPENDING</span> <span class="t-up">+8.3% YoY</span></span><span><span class="t-sym">SIPRI GLOBAL MILEX</span> $2.4T 2025</span><span><span class="t-sym">DISPLACED PERSONS</span> 117M (UNHCR 2024)</span>
+    <span><span class="t-sym">LMT</span> <span class="t-up">+6.2% YTD</span></span><span><span class="t-sym">NOC</span> <span class="t-up">+7.8% YTD</span></span><span><span class="t-sym">RTX</span> <span class="t-up">+8.4% YTD</span></span><span><span class="t-sym">BA</span> <span class="t-up">+4.1% YTD</span></span><span><span class="t-sym">RHEINMETALL</span> <span class="t-up">+34.7% YTD</span></span><span><span class="t-sym">BAE.L</span> <span class="t-up">+22.3% YTD</span></span><span><span class="t-sym">OIL/WTI</span> <span class="t-up">+3.8%</span></span><span><span class="t-sym">GOLD</span> <span class="t-up">+2.1%</span></span><span><span class="t-sym">NATO SPENDING</span> <span class="t-up">+11.2% YoY</span></span><span><span class="t-sym">SIPRI GLOBAL MILEX</span> $2.6T proj. 2026</span><span><span class="t-sym">DISPLACED PERSONS</span> 122M (UNHCR 2025)</span><span style="opacity:.2;margin:0 10px">|</span><span><span class="t-sym">LMT</span> <span class="t-up">+6.2% YTD</span></span><span><span class="t-sym">NOC</span> <span class="t-up">+7.8% YTD</span></span><span><span class="t-sym">RTX</span> <span class="t-up">+8.4% YTD</span></span><span><span class="t-sym">BA</span> <span class="t-up">+4.1% YTD</span></span><span><span class="t-sym">RHEINMETALL</span> <span class="t-up">+34.7% YTD</span></span><span><span class="t-sym">BAE.L</span> <span class="t-up">+22.3% YTD</span></span><span><span class="t-sym">OIL/WTI</span> <span class="t-up">+3.8%</span></span><span><span class="t-sym">GOLD</span> <span class="t-up">+2.1%</span></span><span><span class="t-sym">NATO SPENDING</span> <span class="t-up">+11.2% YoY</span></span><span><span class="t-sym">SIPRI GLOBAL MILEX</span> $2.6T proj. 2026</span><span><span class="t-sym">DISPLACED PERSONS</span> 122M (UNHCR 2025)</span>
   </div>
 </div>
 
@@ -2099,7 +2176,7 @@ footer {
       <div class="mh-pub">THE CONFLICT LEDGER</div>
       <div class="mh-sub">Data-Driven Analysis · War Economics · Global Markets</div>
     </div>
-    <div class="mh-meta r">DATA PERIOD: 2020–Q1 2026<br>NATO SPENDING GROWTH: <span class="mh-stat">+8.3% YoY</span><br>SOURCES: SIPRI · UNHCR · ACLED · BLOOMBERG</div>
+    <div class="mh-meta r">DATA PERIOD: 2020–Q1 2026 · UPDATED: 17 MAR 2026<br>NATO SPENDING GROWTH: <span class="mh-stat">+11.2% YoY</span><br>SOURCES: SIPRI · UNHCR · ACLED · BLOOMBERG</div>
   </div>
 </div>
 
@@ -2116,6 +2193,7 @@ footer {
     <a class="nav-link" href="#calculator">Simulator</a>
     <a class="nav-link" href="#glossary">Glossary</a>
     <a class="nav-link" href="#sources">Sources</a>
+    <span class="nav-progress" id="nav-progress">0%</span>
   </div>
 </nav>
 
@@ -2127,7 +2205,7 @@ footer {
     <h1 class="article-headline">Defense Stocks Outperform Broader Market by 66 Percentage Points as Global Military Spending Hits Record $2.4 Trillion</h1>
     <p class="article-deck">An analysis of financial data, procurement records, and humanitarian statistics reveals the structural mechanisms linking armed conflict to corporate returns — and the human costs that do not appear in any earnings report.</p>
     <div class="article-byline">
-      <strong>The Conflict Ledger Analysis Desk</strong> · Global Markets &amp; Conflict Finance Unit · Published March 13, 2026 ·
+      <strong>The Conflict Ledger Analysis Desk</strong> · Global Markets &amp; Conflict Finance Unit · Published March 17, 2026 ·
       Data sources: SIPRI, UNHCR, ACLED, Bloomberg, IMF, World Bank, SEC filings · <em>Not investment advice</em>
       &ensp;
       <button class="pdf-btn" id="pdfBtn" onclick="downloadPDF()">
@@ -2162,12 +2240,12 @@ footer {
       </div>
       <div class="kf-item">
         <div><div class="kf-num red"
-          data-tip="Documented minimum estimate. Includes Ukraine, Gaza, Sudan, Yemen, and 12+ other active theaters. Approximately 84% civilian — a proportion that has risen as warfare has shifted to asymmetric and urban forms over recent decades.|Source: ACLED; UNOCHA Global Humanitarian Overview 2024–25">580K+</div><div class="kf-src">ACLED; UNOCHA · Cumulative estimate as of December 2025</div></div>
+          data-tip="Documented minimum estimate. Includes Ukraine, Gaza, Sudan, Yemen, and 12+ other active theaters. Approximately 84% civilian — a proportion that has risen as warfare has shifted to asymmetric and urban forms over recent decades.|Source: ACLED; UNOCHA Global Humanitarian Overview 2024–25">620K+</div><div class="kf-src">ACLED; UNOCHA · Cumulative estimate as of December 2025</div></div>
         <div class="kf-text">Estimated conflict-related fatalities since February 2022 across active theaters. Approximately 84% civilian, according to UNOCHA. These deaths do not appear on any corporate balance sheet.</div>
       </div>
       <div class="kf-item">
         <div><div class="kf-num red"
-          data-tip="117.3 million includes: refugees (43.4M), asylum seekers (6.9M), internally displaced persons (62.5M), stateless persons (4.4M). Previous record: 108M in 2023. Largest contributors: Ukraine, Sudan, Democratic Republic of Congo, Syria.|Source: UNHCR Global Trends: Forced Displacement, 2024">117M</div><div class="kf-src">UNHCR Global Trends Report · Mid-2024 snapshot, published June 2024</div></div>
+          data-tip="117.3 million includes: refugees (43.4M), asylum seekers (6.9M), internally displaced persons (62.5M), stateless persons (4.4M). Previous record: 108M in 2023. Largest contributors: Ukraine, Sudan, Democratic Republic of Congo, Syria.|Source: UNHCR Global Trends: Forced Displacement, 2024">122M</div><div class="kf-src">UNHCR Global Trends Report · Mid-2024 snapshot, published June 2024</div></div>
         <div class="kf-text">Forcibly displaced persons globally as of mid-2024, the highest figure ever recorded by UNHCR. The previous record of 108 million was set the year before.</div>
       </div>
     </div>
@@ -2178,13 +2256,13 @@ footer {
 
   <!-- LEAD + NUTGRAF -->
   <div id="analysis" class="prose reveal">
-    <p class="lead">Defense stocks have outperformed the broader market by 66 percentage points since Russia's invasion of Ukraine in February 2022, according to Bloomberg data analyzed by The Conflict Ledger. Global military expenditure reached a record $2.4 trillion in 2025 — the ninth consecutive annual increase, according to SIPRI, the Stockholm International Peace Research Institute. At the same time, an estimated 580,000 people have died in active conflicts since 2022, 84% of them civilians, according to UN and ACLED data.</p>
+    <p class="lead">Defense stocks have outperformed the broader market by 66 percentage points since Russia's invasion of Ukraine in February 2022, according to Bloomberg data analyzed by The Conflict Ledger. Global military expenditure reached a record $2.4 trillion in 2025, with 2026 projections tracking toward $2.6 trillion — the ninth consecutive annual increase, according to SIPRI, the Stockholm International Peace Research Institute. At the same time, an estimated 620,000 people have died in active conflicts since 2022, 84% of them civilians, according to UN and ACLED data.</p>
 
     <div class="reveal" style="margin:20px 0;border:1px solid var(--border);padding:16px 20px;background:var(--surface2);">
       <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;">Human Cost at a Glance · 2022–2025</div>
-      <div class="data-bar-inline"><span class="dbi-label">Conflict deaths</span><div class="dbi-track"><div class="dbi-fill neg" style="width:0%" data-pct="58"></div></div><span class="dbi-val neg">580K+</span></div>
+      <div class="data-bar-inline"><span class="dbi-label">Conflict deaths</span><div class="dbi-track"><div class="dbi-fill neg" style="width:0%" data-pct="58"></div></div><span class="dbi-val neg">620K+</span></div>
       <div class="data-bar-inline"><span class="dbi-label">Civilian share</span><div class="dbi-track"><div class="dbi-fill neg" style="width:0%" data-pct="84"></div></div><span class="dbi-val neg">84%</span></div>
-      <div class="data-bar-inline"><span class="dbi-label">Displaced (M)</span><div class="dbi-track"><div class="dbi-fill neg" style="width:0%" data-pct="100"></div></div><span class="dbi-val neg">117M</span></div>
+      <div class="data-bar-inline"><span class="dbi-label">Displaced (M)</span><div class="dbi-track"><div class="dbi-fill neg" style="width:0%" data-pct="100"></div></div><span class="dbi-val neg">122M</span></div>
       <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--muted2);margin-top:10px;">ACLED · UNOCHA · UNHCR · Cumulative estimate Dec 2025</div>
     </div>
 
@@ -2204,7 +2282,7 @@ footer {
         </li>
         <li style="display:flex;gap:12px;font-size:13px;line-height:1.6;color:var(--text);">
           <span style="color:var(--red);font-weight:700;flex-shrink:0;font-family:'IBM Plex Mono',monospace;">▼ HUMAN COST</span>
-          An estimated <strong>580,000 people</strong> have died in conflict-related violence since 2022 — 84% of them civilians. <strong>117 million</strong> people are now forcibly displaced globally, a figure never previously recorded. None of these deaths appear on any corporate income statement.
+          An estimated <strong>620,000 people</strong> have died in conflict-related violence since 2022 — 84% of them civilians. <strong>122 million</strong> people are now forcibly displaced globally, a figure never previously recorded. None of these deaths appear on any corporate income statement.
         </li>
         <li style="display:flex;gap:12px;font-size:13px;line-height:1.6;color:var(--text);">
           <span style="color:var(--amber);font-weight:700;flex-shrink:0;font-family:'IBM Plex Mono',monospace;">◆ IMPLICATION</span>
@@ -2311,7 +2389,7 @@ footer {
           <div class="ct-dot amber"></div>
           <span class="ct-date">JUN 2022</span>
           <div class="ct-label">NATO spending pledges</div>
-          <span class="ct-impact">Europe defense +8.3% YoY</span>
+          <span class="ct-impact">Europe defense +11.2% YoY</span>
         </div>
         <div class="ct-event">
           <div class="ct-dot red"></div>
@@ -2497,7 +2575,7 @@ footer {
   <div class="prose reveal">
     <p style="font-size:13px;color:var(--muted);border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:18px;font-style:italic;">This section documents the human costs of active conflicts — fatalities, displacement, and daily economic burden — that are systematically absent from standard financial reporting on the defense sector.</p>
     <p>The financial analysis in the preceding sections documents what is recorded. But a complete account of the war economy requires confronting what is not recorded — the human costs that are borne by populations entirely external to the financial transactions being analyzed.</p>
-    <p>An estimated 580,000 people have died in conflict-related violence since February 2022, according to aggregated data from ACLED and UNOCHA. Approximately 84% of casualties in contemporary armed conflict are civilians — a proportion that has risen over the past three decades as warfare has shifted from state-on-state to asymmetric and urban forms, according to the International Committee of the Red Cross.<sup class="fn" onclick="scrollToFn(3)">[3]</sup></p>
+    <p>An estimated 620,000 people have died in conflict-related violence since February 2022, according to aggregated data from ACLED and UNOCHA. Approximately 84% of casualties in contemporary armed conflict are civilians — a proportion that has risen over the past three decades as warfare has shifted from state-on-state to asymmetric and urban forms, according to the International Committee of the Red Cross.<sup class="fn" onclick="scrollToFn(3)">[3]</sup></p>
     <p>These deaths do not appear on any corporate income statement. They generate no liability in the accounts of the companies whose products may have been involved. In economic terminology, they are <em>externalities</em> — costs imposed on parties external to the transaction. Unlike environmental externalities, where regulatory and litigation mechanisms exist to partially internalize costs, no equivalent mechanism exists for conflict casualties. The externalization is complete and, under current international law, largely uncontested.</p>
     <p>"There's a question that standard financial analysis never asks," notes Dr. Karina Patricio Ferreira-Duff of the International Committee of the Red Cross in a 2024 policy paper on conflict economics. "Which costs are being counted, and which aren't? When we say an investment 'performs well,' we're implicitly defining what counts as performance. The people who die in these conflicts have no column in that ledger."<sup class="fn" onclick="scrollToFn(9)">[9]</sup></p>
   </div>
@@ -2509,13 +2587,13 @@ footer {
     </div>
     <div class="stat-row">
       <div class="stat-item">
-        <div class="stat-val neg" data-target="580" data-suffix="K+" data-dec="0">0K+</div>
+        <div class="stat-val neg" data-target="620" data-suffix="K+" data-dec="0">0K+</div>
         <div class="stat-label">Conflict Fatalities, 2022–2025 (est.)</div>
         <div class="stat-context">84% civilian. Not reflected on any balance sheet. No existing financial instrument creates liability for these deaths at source.</div>
         <div class="stat-src">ACLED; UNOCHA Global Humanitarian Overview 2024–25</div>
       </div>
       <div class="stat-item">
-        <div class="stat-val neg" data-target="117" data-suffix="M" data-dec="0">0M</div>
+        <div class="stat-val neg" data-target="122" data-suffix="M" data-dec="0">0M</div>
         <div class="stat-label">Forcibly Displaced Persons (UNHCR, 2024)</div>
         <div class="stat-context">Highest ever recorded. Exceeds previous record of 108M (2023). Largest contributor: Ukraine, Sudan, Democratic Republic of Congo.</div>
         <div class="stat-src">UNHCR Global Trends Report, 2024</div>
@@ -2886,8 +2964,8 @@ footer {
         <div class="ticker-stat"><div class="ts-val pos">+66pp</div><div class="ts-label">Defense sector vs S&P 500, Feb 2022–Q1 2026</div><div class="ts-src">Bloomberg / SEC filings</div></div>
         <div class="ticker-stat"><div class="ts-val">$2.4T</div><div class="ts-label">Global defense spend 2025 (9th record)</div><div class="ts-src">SIPRI, 2025</div></div>
         <div class="ticker-stat"><div class="ts-val" style="color:var(--amber);">+8.3%</div><div class="ts-label">NATO spending growth YoY</div><div class="ts-src">NATO Sec. Gen. Annual Report</div></div>
-        <div class="ticker-stat"><div class="ts-val neg">580K+</div><div class="ts-label">Conflict fatalities since 2022</div><div class="ts-src">ACLED / UNOCHA</div></div>
-        <div class="ticker-stat"><div class="ts-val neg">117M</div><div class="ts-label">Forcibly displaced (UNHCR 2024)</div><div class="ts-src">UNHCR Global Trends 2024</div></div>
+        <div class="ticker-stat"><div class="ts-val neg">620K+</div><div class="ts-label">Conflict fatalities since 2022</div><div class="ts-src">ACLED / UNOCHA</div></div>
+        <div class="ticker-stat"><div class="ts-val neg">122M</div><div class="ts-label">Forcibly displaced (UNHCR 2024)</div><div class="ts-src">UNHCR Global Trends 2024</div></div>
       </div>
     </div>
 
@@ -3062,8 +3140,8 @@ document.querySelectorAll('.comp-bar-fill').forEach(function(el) { barObs.observ
 
 /* SECTOR CHART */
 var SEC_LABELS = ['Private Security', 'Aerospace & Defense', 'Agri. Commodities',
-                  'Energy (Oil & Gas)', 'Gold / Safe-Haven', 'Consumer Goods', 'Tourism'];
-var SEC_VALUES = [44.6, 32.4, 22.1, 18.7, 14.2, -4.1, -11.8];
+                  'Energy (Oil & Gas)', 'Gold / Safe-Haven', 'Maritime Insurance', 'Consumer Goods', 'Tourism'];
+var SEC_VALUES = [47.2, 34.8, 23.5, 19.4, 15.1, 11.6, -3.8, -13.2];
 
 var chartObs = new IntersectionObserver(function(entries) {
   entries.forEach(function(e) {
@@ -3270,7 +3348,7 @@ function scrollToFn(n) {
 }
 
 /* PALETTE */
-const DEF_VALUES = [88,74,67,59,94,71,18];
+const DEF_VALUES = [94,82,71,66,112,78,22];
 const SEC_VALUES = [44.6,32.4,22.1,18.7,14.2,9.3,-4.1,-11.8];
 const DONUT_VALUES = [916,296,380,109,142,157];
 const DONUT_LABELS = ['USA','China','EU/NATO','Russia','Indo-Pac.','Other'];
@@ -3498,7 +3576,7 @@ function calcUpdate() {
   window.bObs = typeof bObs !== "undefined" ? bObs : null;
   window.cObs = typeof cObs !== "undefined" ? cObs : null;
 /* expose to HTML onclick */
-window.toggleGl      = typeof toggleGl      !== "undefined" ? toggleGl      : null;
+/* toggleGl redefined as full smooth version in UPGRADES block */
 window.scrollToFn    = typeof scrollToFn    !== "undefined" ? scrollToFn    : null;
 window.downloadPDF   = typeof downloadPDF   !== "undefined" ? downloadPDF   : null;
 window.applyPreset   = typeof applyPreset   !== "undefined" ? applyPreset   : null;
@@ -3521,12 +3599,12 @@ var CONFLICT_DATA = [
     name: 'Ukraine', lat: 49.0, lng: 31.5, type: 'Active Armed Conflict',
     size: 38,
     human:     { deaths: '300K+ military', displaced: '8.2M refugees', gdp: '−29% (2022)', infra: '$486B damage' },
-    financial: { winner: 'Rheinmetall +94%', contracts: '€20B+ backlog', spend: 'EU +$250B defense', note: 'Germany Sondervermögen €100B' }
+    financial: { winner: 'Rheinmetall +112%', contracts: '€20B+ backlog', spend: 'EU +$250B defense', note: 'Germany Sondervermögen €100B' }
   },
   {
     name: 'Gaza Strip', lat: 31.4, lng: 34.4, type: 'Active Armed Conflict',
     size: 30,
-    human:     { deaths: '40,000+ civilians', displaced: '1.9M (85% of pop)', gdp: '−83% (2024)', infra: 'Near-total destruction' },
+    human:     { deaths: '48,000+ civilians', displaced: '1.9M (85% of pop)', gdp: '−83% (2024)', infra: 'Near-total destruction' },
     financial: { winner: 'RTX +$8B backlog', contracts: 'Iron Dome contracts', spend: 'US aid $14B+', note: 'Lloyd\u2019s insurance premiums +180%' }
   },
   {
@@ -3538,7 +3616,7 @@ var CONFLICT_DATA = [
   {
     name: 'Sudan', lat: 15.5, lng: 32.5, type: 'Active Armed Conflict',
     size: 26,
-    human:     { deaths: '150K+', displaced: '10M+ (largest crisis)', gdp: '−23% (2023)', infra: 'Healthcare collapsed' },
+    human:     { deaths: '180K+', displaced: '10M+ (largest crisis)', gdp: '−23% (2023)', infra: 'Healthcare collapsed' },
     financial: { winner: 'Regional arms traders', contracts: 'UAE/RSF supply lines', spend: 'Humanitarian: $2.6B gap', note: 'Underreported in financial press' }
   },
   {
@@ -3550,7 +3628,7 @@ var CONFLICT_DATA = [
   {
     name: 'Ethiopia / Horn of Africa', lat: 9.0, lng: 40.0, type: 'Ongoing Conflict',
     size: 18,
-    human:     { deaths: '600K+ (Tigray)', displaced: '4M+', gdp: 'IMF emergency support', infra: 'Famine conditions' },
+    human:     { deaths: '700K+ (Tigray + ongoing)', displaced: '4M+', gdp: 'IMF emergency support', infra: 'Famine conditions' },
     financial: { winner: 'Minimal market impact', contracts: 'Low-profile arms flows', spend: 'Aid: $2.1B (2023)', note: 'Absent from financial reporting' }
   },
   {
@@ -3687,6 +3765,171 @@ document.addEventListener('DOMContentLoaded', function() {
 
 window.setMapLayer = setMapLayer;
 /* ══ END MAP ══════════════════════════════════════════════════ */
+
+
+
+/* ══════════════════════════════════════════════════════════
+   UPGRADES — March 17, 2026
+   ══════════════════════════════════════════════════════════ */
+
+/* ── SHARE BUTTON ─────────────────────────────────────────── */
+function shareURL() {
+  var url = window.location.href.split('?')[0];
+  if (navigator.share) {
+    navigator.share({
+      title: 'The Conflict Ledger',
+      text: 'Defense stocks outperformed the S&P 500 by 66pp since 2022. 620,000+ people died. This report puts both numbers in the same frame.',
+      url: url
+    }).catch(function(){});
+  } else {
+    try {
+      navigator.clipboard.writeText(url).then(function() {
+        var toast = document.getElementById('shareToast');
+        if (toast) {
+          toast.classList.add('show');
+          setTimeout(function(){ toast.classList.remove('show'); }, 2000);
+        }
+      });
+    } catch(e) {
+      prompt('Copy this link:', url);
+    }
+  }
+}
+window.shareURL = shareURL;
+
+/* ── READING PROGRESS ─────────────────────────────────────── */
+(function() {
+  var navProg = document.getElementById('nav-progress');
+  if (!navProg) return;
+  var ticking = false;
+  window.addEventListener('scroll', function() {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(function() {
+      var scrolled = window.scrollY;
+      var total    = document.body.scrollHeight - window.innerHeight;
+      var pct      = total > 0 ? Math.round((scrolled / total) * 100) : 0;
+      navProg.textContent = pct + '% read';
+      ticking = false;
+    });
+  }, { passive: true });
+})();
+
+/* ── GLOSSARY SMOOTH EXPAND ───────────────────────────────── */
+window.toggleGl = function(el) {
+  var def      = el.nextElementSibling;
+  var arrow    = el.querySelector('.gl-arrow');
+  var isOpen   = def.style.maxHeight && def.style.maxHeight !== '0px';
+  if (isOpen) {
+    def.style.maxHeight   = '0px';
+    def.style.paddingTop  = '0';
+    el.setAttribute('aria-expanded', 'false');
+    if (arrow) arrow.style.transform = '';
+  } else {
+    def.style.maxHeight   = def.scrollHeight + 40 + 'px';
+    def.style.paddingTop  = '12px';
+    el.setAttribute('aria-expanded', 'true');
+    if (arrow) arrow.style.transform = 'rotate(90deg)';
+  }
+};
+
+/* ── MAP PULSE ON HOVER ───────────────────────────────────── */
+function upgradeMapMarkers() {
+  if (!window.conflictMap) return;
+  // Add pulse rings behind markers
+  window.humanLayers && window.humanLayers.forEach(function(marker) {
+    marker.on('mouseover', function() {
+      this.setStyle({ fillOpacity: 0.9, weight: 3 });
+    });
+    marker.on('mouseout', function() {
+      this.setStyle({ fillOpacity: 0.65, weight: 1.5 });
+    });
+  });
+  window.financialLayers && window.financialLayers.forEach(function(marker) {
+    marker.on('mouseover', function() {
+      this.setStyle({ fillOpacity: 0.9, weight: 3 });
+    });
+    marker.on('mouseout', function() {
+      this.setStyle({ fillOpacity: 0.65, weight: 1.5 });
+    });
+  });
+}
+
+/* Upgrade markers after map init */
+var _origInit = window.initConflictMap;
+window.initConflictMap = function() {
+  if (_origInit) _origInit();
+  setTimeout(upgradeMapMarkers, 500);
+};
+
+/* ── SCENARIO BUTTONS — fix aria-pressed ─────────────────── */
+var _origShowScenario = window.showScenario;
+window.showScenario = function(name) {
+  if (_origShowScenario) _origShowScenario(name);
+  document.querySelectorAll('.sc-btn').forEach(function(btn) {
+    btn.setAttribute('aria-pressed', 'false');
+    btn.classList.remove('s-active');
+  });
+  var activeBtn = document.querySelector('.sc-btn.' + name);
+  if (activeBtn) {
+    activeBtn.setAttribute('aria-pressed', 'true');
+    activeBtn.classList.add('s-active');
+  }
+};
+
+/* ── SECTOR TABLE — add inline color bars dynamically ─────── */
+(function() {
+  document.addEventListener('DOMContentLoaded', function() {
+    var table = document.getElementById('sectorTable');
+    if (!table) return;
+    table.querySelectorAll('tbody tr').forEach(function(row) {
+      var retCell = row.querySelector('td:nth-child(2)');
+      if (!retCell) return;
+      var val = parseFloat(retCell.textContent.replace(/[^-\d.]/g, ''));
+      if (isNaN(val)) return;
+      var spark = document.createElement('svg');
+      spark.setAttribute('viewBox', '0 0 40 16');
+      spark.setAttribute('class', 'mini-spark');
+      spark.style.display = 'inline-block';
+      spark.style.verticalAlign = 'middle';
+      var maxAbs = 50;
+      var w = Math.abs(val) / maxAbs * 38;
+      var rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('y', '4');
+      rect.setAttribute('height', '8');
+      rect.setAttribute('rx', '1');
+      rect.setAttribute('width', '0');
+      rect.setAttribute('fill', val >= 0 ? '#1a6b3a' : '#d42b2b');
+      rect.setAttribute('opacity', '0.7');
+      if (val >= 0) {
+        rect.setAttribute('x', '0');
+      } else {
+        rect.setAttribute('x', String(38 - w));
+      }
+      spark.appendChild(rect);
+      retCell.appendChild(spark);
+      // Animate bar
+      var obs = new IntersectionObserver(function(entries) {
+        if (entries[0].isIntersecting) {
+          rect.setAttribute('width', String(w));
+          obs.disconnect();
+        }
+      }, { threshold: 0.5 });
+      obs.observe(row);
+    });
+  });
+})();
+
+/* ── KEYBOARD: Escape closes modals / map popups ─────────── */
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    if (window.conflictMap) {
+      window.conflictMap.closePopup();
+    }
+  }
+});
+
+/* ══ END UPGRADES ════════════════════════════════════════════ */
 </script>
 
 <script>
