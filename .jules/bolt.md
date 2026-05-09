@@ -1,0 +1,3 @@
+## 2025-05-15 - [Initial Hunt]
+**Learning:** Found a non-throttled scroll listener in the Research Edition's navigation logic that uses `offsetTop`, a layout-triggering property. In a single-page application with many sections, this can cause significant jank during scrolling, especially on lower-end devices.
+**Action:** Replace the expensive scroll-based navigation highlighting with a more efficient `IntersectionObserver` implementation or at least throttle it using `requestAnimationFrame` and cache the layout values.
