@@ -3286,6 +3286,7 @@ function initResearch() {
   if (window.rObs)  document.querySelectorAll('#view-research .reveal').forEach(function(el){ window.rObs.observe(el); });
   if (window.cuObs) document.querySelectorAll('#view-research [data-target]').forEach(function(el){ window.cuObs.observe(el); });
   if (window.bObs)  document.querySelectorAll('#view-research .cf-bar-fill').forEach(function(el){ window.bObs.observe(el); });
+  if (window.updateSectionOffsets) window.updateSectionOffsets();
   if (window.calcUpdate) window.calcUpdate();
 }
 
@@ -3318,15 +3319,56 @@ window.addEventListener('scroll', () => {
   });
 }, {passive:true});
 
-/* NAV ACTIVE */
+/* NAV ACTIVE - Optimized with rAF throttling and offset caching to prevent layout thrashing */
 const navLinks = document.querySelectorAll('.nav-link');
 const sectionIds = ['findings','analysis','data','cases','perspectives','scenarios','calculator','glossary','sources'];
-window.addEventListener('scroll', () => {
+const sections = sectionIds.map(id => document.getElementById(id)).filter(Boolean);
+let sectionOffsets = [];
+let lastCur = '';
+let navTicking = false;
+
+function updateSectionOffsets() {
+  sectionOffsets = sections.map(el => ({
+    id: el.id,
+    top: el.offsetTop
+  }));
+}
+window.updateSectionOffsets = updateSectionOffsets;
+
+function updateActiveNav() {
   const y = window.scrollY + 130;
   let cur = '';
-  sectionIds.forEach(id => { const el = document.getElementById(id); if (el && el.offsetTop <= y) cur = id; });
-  navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#'+cur));
+  // Use cached offsets and simple loop for O(n) search
+  for (let i = 0; i < sectionOffsets.length; i++) {
+    if (sectionOffsets[i].top <= y) {
+      cur = sectionOffsets[i].id;
+    } else {
+      break; // Sections are ordered, so we can stop once we pass the threshold
+    }
+  }
+
+  // Only update DOM if the active section has changed
+  if (cur !== lastCur) {
+    lastCur = cur;
+    for (let i = 0; i < navLinks.length; i++) {
+      const link = navLinks[i];
+      link.classList.toggle('active', link.getAttribute('href') === '#' + cur);
+    }
+  }
+  navTicking = false;
+}
+
+window.addEventListener('scroll', () => {
+  if (!navTicking) {
+    requestAnimationFrame(updateActiveNav);
+    navTicking = true;
+  }
 }, {passive:true});
+
+// Ensure offsets are accurate after layout changes
+window.addEventListener('resize', updateSectionOffsets);
+window.addEventListener('load', updateSectionOffsets);
+updateSectionOffsets();
 
 /* GLOSSARY TOGGLE */
 function toggleGl(trigger) {
