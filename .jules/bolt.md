@@ -1,0 +1,3 @@
+## 2025-05-14 - Layout Thrashing in Scroll Listeners
+**Learning:** Querying `offsetTop` inside a scroll listener for multiple elements causes layout thrashing (repeated recalculation of the render tree), which significantly impacts scroll performance, especially on pages with many sections.
+**Action:** Cache layout-triggering properties like `offsetTop` outside the scroll handler and use `requestAnimationFrame` to throttle updates. Ensure cached values are refreshed on `window.resize`, `window.load`, and when switching views that affect element visibility (as `display: none` elements return 0 for `offsetTop`).
