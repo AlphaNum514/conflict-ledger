@@ -3072,6 +3072,16 @@ body.show-research .nav-progress { display: block; }
 <script>
 /* ─── GLOBAL: VIEW SWITCHER ────────────────────────────────── */
 /* Explicitly expose switchView globally */
+window.sectionIds = ['findings','analysis','data','map','cases','perspectives','scenarios','calculator','glossary','sources'];
+window.sectionOffsets = {};
+
+window.refreshOffsets = function() {
+  window.sectionIds.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) window.sectionOffsets[id] = el.offsetTop;
+  });
+};
+
 window.switchView = function switchView(v) {
   try { localStorage.setItem('cl-view', v); } catch(e) {}
   var isRes = v === 'research';
@@ -3080,6 +3090,10 @@ window.switchView = function switchView(v) {
   document.getElementById('tab-research').classList.toggle('sw-active', isRes);
   window.scrollTo(0, 0);
   if (isRes && !window._resInited) { window._resInited = true; initResearch(); }
+  if (isRes) {
+    // Hidden elements return 0 for offsetTop; refresh once visible
+    requestAnimationFrame(function() { window.refreshOffsets(); });
+  }
 };
 
 /* ─── SIMPLE SCRIPTS (isolated scope) ──────────────────────── */
@@ -3293,6 +3307,10 @@ function initResearch() {
 (function() {
 
 /* THEME */
+window.addEventListener('resize', () => {
+  window.refreshOffsets();
+});
+
 const html = document.documentElement;
 const dmBtn = document.getElementById('dmBtn');
 let dark = false;
@@ -3320,12 +3338,19 @@ window.addEventListener('scroll', () => {
 
 /* NAV ACTIVE */
 const navLinks = document.querySelectorAll('.nav-link');
-const sectionIds = ['findings','analysis','data','cases','perspectives','scenarios','calculator','glossary','sources'];
+let rafNav = false;
 window.addEventListener('scroll', () => {
-  const y = window.scrollY + 130;
-  let cur = '';
-  sectionIds.forEach(id => { const el = document.getElementById(id); if (el && el.offsetTop <= y) cur = id; });
-  navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#'+cur));
+  if (rafNav) return;
+  rafNav = true;
+  requestAnimationFrame(() => {
+    const y = window.scrollY + 130;
+    let cur = '';
+    window.sectionIds.forEach(id => {
+      if (window.sectionOffsets[id] <= y) cur = id;
+    });
+    navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + cur));
+    rafNav = false;
+  });
 }, {passive:true});
 
 /* GLOSSARY TOGGLE */
