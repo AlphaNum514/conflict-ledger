@@ -3070,6 +3070,20 @@ body.show-research .nav-progress { display: block; }
 </div>
 
 <script>
+/* ─── GLOBAL: PERFORMANCE CACHING ──────────────────────────── */
+window.sectionOffsets = {};
+window.refreshOffsets = function() {
+  const ids = ['findings','analysis','data','cases','perspectives','scenarios','calculator','glossary','sources'];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      window.sectionOffsets[id] = el.offsetTop;
+    }
+  });
+  window.maxScroll = (document.body.scrollHeight || document.documentElement.scrollHeight) - window.innerHeight;
+};
+window.addEventListener('load', window.refreshOffsets);
+
 /* ─── GLOBAL: VIEW SWITCHER ────────────────────────────────── */
 /* Explicitly expose switchView globally */
 window.switchView = function switchView(v) {
@@ -3080,7 +3094,12 @@ window.switchView = function switchView(v) {
   document.getElementById('tab-research').classList.toggle('sw-active', isRes);
   window.scrollTo(0, 0);
   if (isRes && !window._resInited) { window._resInited = true; initResearch(); }
+  if (isRes) setTimeout(window.refreshOffsets, 50); // Small delay to allow display:block layout
 };
+
+window.addEventListener('resize', () => {
+  if (document.body.classList.contains('show-research')) window.refreshOffsets();
+}, { passive: true });
 
 /* ─── SIMPLE SCRIPTS (isolated scope) ──────────────────────── */
 (function() {
@@ -3091,7 +3110,7 @@ var raf = false;
 window.addEventListener('scroll', function() {
   if (raf) return; raf = true;
   requestAnimationFrame(function() {
-    var s = window.scrollY, t = document.body.scrollHeight - window.innerHeight;
+    var s = window.scrollY, t = window.maxScroll || (document.body.scrollHeight - window.innerHeight);
     prog.style.width = Math.min((s/t)*100, 100) + '%';
     raf = false;
   });
@@ -3311,7 +3330,7 @@ let rafP = false;
 window.addEventListener('scroll', () => {
   if (rafP) return; rafP = true;
   requestAnimationFrame(() => {
-    const s = window.scrollY, t = document.body.scrollHeight - window.innerHeight;
+    const s = window.scrollY, t = window.maxScroll || (document.body.scrollHeight - window.innerHeight);
     progressBar.style.width = Math.min((s/t)*100,100)+'%';
     scrollTopBtn.classList.toggle('show', s > 400);
     rafP = false;
@@ -3321,11 +3340,19 @@ window.addEventListener('scroll', () => {
 /* NAV ACTIVE */
 const navLinks = document.querySelectorAll('.nav-link');
 const sectionIds = ['findings','analysis','data','cases','perspectives','scenarios','calculator','glossary','sources'];
+let navRaf = false;
 window.addEventListener('scroll', () => {
-  const y = window.scrollY + 130;
-  let cur = '';
-  sectionIds.forEach(id => { const el = document.getElementById(id); if (el && el.offsetTop <= y) cur = id; });
-  navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#'+cur));
+  if (navRaf) return; navRaf = true;
+  requestAnimationFrame(() => {
+    const y = window.scrollY + 130;
+    let cur = '';
+    sectionIds.forEach(id => {
+      const offset = window.sectionOffsets[id];
+      if (typeof offset !== 'undefined' && offset <= y) cur = id;
+    });
+    navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + cur));
+    navRaf = false;
+  });
 }, {passive:true});
 
 /* GLOSSARY TOGGLE */
@@ -3807,7 +3834,7 @@ window.shareURL = shareURL;
     ticking = true;
     requestAnimationFrame(function() {
       var scrolled = window.scrollY;
-      var total    = document.body.scrollHeight - window.innerHeight;
+      var total    = window.maxScroll || (document.body.scrollHeight - window.innerHeight);
       var pct      = total > 0 ? Math.round((scrolled / total) * 100) : 0;
       navProg.textContent = pct + '% read';
       ticking = false;
