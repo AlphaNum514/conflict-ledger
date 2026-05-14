@@ -3071,6 +3071,18 @@ body.show-research .nav-progress { display: block; }
 
 <script>
 /* ─── GLOBAL: VIEW SWITCHER ────────────────────────────────── */
+window.sectionIds = ['findings','analysis','data','cases','perspectives','scenarios','calculator','glossary','sources'];
+window.sectionOffsets = [];
+window.maxScroll = 0;
+
+window.refreshOffsets = function() {
+  window.maxScroll = document.body.scrollHeight - window.innerHeight;
+  window.sectionOffsets = window.sectionIds.map(id => {
+    const el = document.getElementById(id);
+    return el ? el.offsetTop : 0;
+  });
+};
+
 /* Explicitly expose switchView globally */
 window.switchView = function switchView(v) {
   try { localStorage.setItem('cl-view', v); } catch(e) {}
@@ -3080,22 +3092,59 @@ window.switchView = function switchView(v) {
   document.getElementById('tab-research').classList.toggle('sw-active', isRes);
   window.scrollTo(0, 0);
   if (isRes && !window._resInited) { window._resInited = true; initResearch(); }
+  // Recalculate offsets after view switch to account for layout changes
+  setTimeout(window.refreshOffsets, 50);
 };
+
+/* GLOBAL SCROLL HANDLER */
+(function() {
+  var raf = false;
+  // Cache DOM elements to avoid expensive re-queries in the RAF callback
+  var prog = document.getElementById('prog');
+  var progressBar = document.getElementById('progress-bar');
+  var navProg = document.getElementById('nav-progress');
+  var scrollTopBtn = document.getElementById('scrollTop');
+  var navLinks = document.querySelectorAll('.nav-link');
+
+  window.addEventListener('scroll', function() {
+    if (raf) return;
+    raf = true;
+    requestAnimationFrame(function() {
+      var s = window.scrollY;
+      var isRes = document.body.classList.contains('show-research');
+
+      // Use cached maxScroll if available to prevent layout triggering
+      if (!window.maxScroll) window.refreshOffsets();
+      var pct = window.maxScroll > 0 ? (s / window.maxScroll) * 100 : 0;
+
+      if (!isRes) {
+        if (prog) prog.style.width = Math.min(pct, 100) + '%';
+      } else {
+        if (progressBar) progressBar.style.width = Math.min(pct, 100) + '%';
+        if (navProg) navProg.textContent = Math.round(Math.min(pct, 100)) + '% read';
+        if (scrollTopBtn) scrollTopBtn.classList.toggle('show', s > 400);
+
+        var y = s + 130;
+        var cur = '';
+        if (window.sectionOffsets && window.sectionOffsets.length) {
+          for (var i = 0; i < window.sectionIds.length; i++) {
+            if (window.sectionOffsets[i] <= y) cur = window.sectionIds[i];
+          }
+        }
+        for (var i = 0; i < navLinks.length; i++) {
+          var l = navLinks[i];
+          l.classList.toggle('active', l.getAttribute('href') === '#' + cur);
+        }
+      }
+      raf = false;
+    });
+  }, { passive: true });
+  window.addEventListener('resize', window.refreshOffsets);
+  window.addEventListener('load', window.refreshOffsets);
+})();
 
 /* ─── SIMPLE SCRIPTS (isolated scope) ──────────────────────── */
 (function() {
-
-/* PROGRESS BAR */
-var prog = document.getElementById('prog');
-var raf = false;
-window.addEventListener('scroll', function() {
-  if (raf) return; raf = true;
-  requestAnimationFrame(function() {
-    var s = window.scrollY, t = document.body.scrollHeight - window.innerHeight;
-    prog.style.width = Math.min((s/t)*100, 100) + '%';
-    raf = false;
-  });
-}, {passive: true});
 
 /* SCROLL REVEAL */
 var obs = new IntersectionObserver(function(entries) {
@@ -3304,29 +3353,6 @@ dmBtn.addEventListener('click', () => {
   refreshAllCharts();
 });
 
-/* PROGRESS */
-const progressBar = document.getElementById('progress-bar');
-const scrollTopBtn = document.getElementById('scrollTop');
-let rafP = false;
-window.addEventListener('scroll', () => {
-  if (rafP) return; rafP = true;
-  requestAnimationFrame(() => {
-    const s = window.scrollY, t = document.body.scrollHeight - window.innerHeight;
-    progressBar.style.width = Math.min((s/t)*100,100)+'%';
-    scrollTopBtn.classList.toggle('show', s > 400);
-    rafP = false;
-  });
-}, {passive:true});
-
-/* NAV ACTIVE */
-const navLinks = document.querySelectorAll('.nav-link');
-const sectionIds = ['findings','analysis','data','cases','perspectives','scenarios','calculator','glossary','sources'];
-window.addEventListener('scroll', () => {
-  const y = window.scrollY + 130;
-  let cur = '';
-  sectionIds.forEach(id => { const el = document.getElementById(id); if (el && el.offsetTop <= y) cur = id; });
-  navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#'+cur));
-}, {passive:true});
 
 /* GLOSSARY TOGGLE */
 function toggleGl(trigger) {
@@ -3797,23 +3823,6 @@ function shareURL() {
 }
 window.shareURL = shareURL;
 
-/* ── READING PROGRESS ─────────────────────────────────────── */
-(function() {
-  var navProg = document.getElementById('nav-progress');
-  if (!navProg) return;
-  var ticking = false;
-  window.addEventListener('scroll', function() {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(function() {
-      var scrolled = window.scrollY;
-      var total    = document.body.scrollHeight - window.innerHeight;
-      var pct      = total > 0 ? Math.round((scrolled / total) * 100) : 0;
-      navProg.textContent = pct + '% read';
-      ticking = false;
-    });
-  }, { passive: true });
-})();
 
 /* ── GLOSSARY SMOOTH EXPAND ───────────────────────────────── */
 window.toggleGl = function(el) {
