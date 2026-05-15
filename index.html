@@ -3080,22 +3080,14 @@ window.switchView = function switchView(v) {
   document.getElementById('tab-research').classList.toggle('sw-active', isRes);
   window.scrollTo(0, 0);
   if (isRes && !window._resInited) { window._resInited = true; initResearch(); }
+  if (window.refreshOffsets) {
+    setTimeout(window.refreshOffsets, 50);
+  }
 };
 
 /* ─── SIMPLE SCRIPTS (isolated scope) ──────────────────────── */
 (function() {
 
-/* PROGRESS BAR */
-var prog = document.getElementById('prog');
-var raf = false;
-window.addEventListener('scroll', function() {
-  if (raf) return; raf = true;
-  requestAnimationFrame(function() {
-    var s = window.scrollY, t = document.body.scrollHeight - window.innerHeight;
-    prog.style.width = Math.min((s/t)*100, 100) + '%';
-    raf = false;
-  });
-}, {passive: true});
 
 /* SCROLL REVEAL */
 var obs = new IntersectionObserver(function(entries) {
@@ -3304,29 +3296,6 @@ dmBtn.addEventListener('click', () => {
   refreshAllCharts();
 });
 
-/* PROGRESS */
-const progressBar = document.getElementById('progress-bar');
-const scrollTopBtn = document.getElementById('scrollTop');
-let rafP = false;
-window.addEventListener('scroll', () => {
-  if (rafP) return; rafP = true;
-  requestAnimationFrame(() => {
-    const s = window.scrollY, t = document.body.scrollHeight - window.innerHeight;
-    progressBar.style.width = Math.min((s/t)*100,100)+'%';
-    scrollTopBtn.classList.toggle('show', s > 400);
-    rafP = false;
-  });
-}, {passive:true});
-
-/* NAV ACTIVE */
-const navLinks = document.querySelectorAll('.nav-link');
-const sectionIds = ['findings','analysis','data','cases','perspectives','scenarios','calculator','glossary','sources'];
-window.addEventListener('scroll', () => {
-  const y = window.scrollY + 130;
-  let cur = '';
-  sectionIds.forEach(id => { const el = document.getElementById(id); if (el && el.offsetTop <= y) cur = id; });
-  navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#'+cur));
-}, {passive:true});
 
 /* GLOSSARY TOGGLE */
 function toggleGl(trigger) {
@@ -3797,22 +3766,69 @@ function shareURL() {
 }
 window.shareURL = shareURL;
 
-/* ── READING PROGRESS ─────────────────────────────────────── */
+/* ── CONSOLIDATED SCROLL HANDLER ── */
 (function() {
+  var progSimple = document.getElementById('prog');
+  var progResearch = document.getElementById('progress-bar');
+  var scrollTopBtn = document.getElementById('scrollTop');
   var navProg = document.getElementById('nav-progress');
-  if (!navProg) return;
+  var navLinks = document.querySelectorAll('.nav-link');
+  var sectionIds = ['findings','analysis','data','cases','perspectives','scenarios','calculator','glossary','sources'];
+
+  var sectionOffsets = {};
+  var maxScroll = 0;
+  var lastScrollY = -1;
   var ticking = false;
-  window.addEventListener('scroll', function() {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(function() {
-      var scrolled = window.scrollY;
-      var total    = document.body.scrollHeight - window.innerHeight;
-      var pct      = total > 0 ? Math.round((scrolled / total) * 100) : 0;
-      navProg.textContent = pct + '% read';
-      ticking = false;
+
+  window.refreshOffsets = function() {
+    maxScroll = document.body.scrollHeight - window.innerHeight;
+    sectionIds.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) sectionOffsets[id] = el.offsetTop;
     });
+  };
+
+  function update() {
+    var s = Math.max(0, window.scrollY);
+    if (s === lastScrollY) {
+      ticking = false;
+      return;
+    }
+    lastScrollY = s;
+
+    // 1. Progress bars & Reading Progress
+    var pct = maxScroll > 0 ? Math.min((s / maxScroll) * 100, 100) : 0;
+    if (progSimple) progSimple.style.width = pct + '%';
+    if (progResearch) progResearch.style.width = pct + '%';
+    if (navProg) navProg.textContent = Math.round(pct) + '% read';
+
+    // 2. Scroll top button visibility
+    if (scrollTopBtn) scrollTopBtn.classList.toggle('show', s > 400);
+
+    // 3. Navigation highlighting
+    var y = s + 130;
+    var cur = '';
+    for (var i = 0; i < sectionIds.length; i++) {
+      if (sectionOffsets[sectionIds[i]] <= y) cur = sectionIds[i];
+    }
+    navLinks.forEach(function(l) {
+      l.classList.toggle('active', l.getAttribute('href') === '#' + cur);
+    });
+
+    ticking = false;
+  }
+
+  window.addEventListener('scroll', function() {
+    if (!ticking) {
+      requestAnimationFrame(update);
+      ticking = true;
+    }
   }, { passive: true });
+
+  window.addEventListener('resize', window.refreshOffsets);
+  window.addEventListener('load', window.refreshOffsets);
+  // Initial calculation
+  setTimeout(window.refreshOffsets, 100);
 })();
 
 /* ── GLOSSARY SMOOTH EXPAND ───────────────────────────────── */
@@ -3830,6 +3846,9 @@ window.toggleGl = function(el) {
     def.style.paddingTop  = '12px';
     el.setAttribute('aria-expanded', 'true');
     if (arrow) arrow.style.transform = 'rotate(90deg)';
+  }
+  if (window.refreshOffsets) {
+    setTimeout(window.refreshOffsets, 350); // wait for transition
   }
 };
 
