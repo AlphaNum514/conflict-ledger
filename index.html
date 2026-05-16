@@ -3079,23 +3079,88 @@ window.switchView = function switchView(v) {
   document.getElementById('tab-simple').classList.toggle('sw-active', !isRes);
   document.getElementById('tab-research').classList.toggle('sw-active', isRes);
   window.scrollTo(0, 0);
-  if (isRes && !window._resInited) { window._resInited = true; initResearch(); }
+  if (isRes && !window._resInited) {
+    window._resInited = true;
+    initResearch();
+  }
+  // Recalculate offsets after view switch as display:none elements return 0
+  setTimeout(function() { if(window.refreshOffsets) window.refreshOffsets(); }, 50);
 };
+
+/* ─── GLOBAL PERFORMANCE CACHE ─── */
+window.sectionIds = ['findings','analysis','data','cases','perspectives','scenarios','calculator','glossary','sources'];
+window.sectionOffsets = {};
+window.maxScroll = 1;
+
+window.refreshOffsets = function() {
+  window.maxScroll = Math.max(1, document.body.scrollHeight - window.innerHeight);
+  window.sectionIds.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) window.sectionOffsets[id] = el.offsetTop;
+  });
+};
+
+window.addEventListener('resize', function() { if(window.refreshOffsets) window.refreshOffsets(); });
+window.addEventListener('load', function() { if(window.refreshOffsets) window.refreshOffsets(); });
+
+/* ─── CONSOLIDATED SCROLL HANDLER ─── */
+(function() {
+  var ticking = false;
+  var progSimple, progResearch, navProg, scrollTopBtn, navLinks;
+
+  function cacheElements() {
+    progSimple = document.getElementById('prog');
+    progResearch = document.getElementById('progress-bar');
+    navProg = document.getElementById('nav-progress');
+    scrollTopBtn = document.getElementById('scrollTop');
+    navLinks = document.querySelectorAll('.nav-link');
+  }
+
+  window.addEventListener('scroll', function() {
+    if (!ticking) {
+      requestAnimationFrame(updateScroll);
+      ticking = true;
+    }
+  }, { passive: true });
+
+  function updateScroll() {
+    if (!progSimple) cacheElements();
+    var s = Math.max(0, window.scrollY);
+    var pct = (s / window.maxScroll) * 100;
+    var pctStr = Math.min(pct, 100) + '%';
+
+    if (progSimple) progSimple.style.width = pctStr;
+    if (progResearch) progResearch.style.width = pctStr;
+    if (navProg) navProg.textContent = Math.round(Math.min(pct, 100)) + '% read';
+    if (scrollTopBtn) {
+      var shouldShow = s > 400;
+      if (scrollTopBtn.classList.contains('show') !== shouldShow) {
+        scrollTopBtn.classList.toggle('show', shouldShow);
+      }
+    }
+
+    if (navLinks && navLinks.length > 0) {
+      var y = s + 130;
+      var cur = '';
+      for (var i = 0; i < window.sectionIds.length; i++) {
+        var id = window.sectionIds[i];
+        if (window.sectionOffsets[id] <= y) cur = id;
+      }
+      for (var j = 0; j < navLinks.length; j++) {
+        var link = navLinks[j];
+        var isActive = link.getAttribute('href') === '#' + cur;
+        if (link.classList.contains('active') !== isActive) {
+          link.classList.toggle('active', isActive);
+        }
+      }
+    }
+    ticking = false;
+  }
+})();
 
 /* ─── SIMPLE SCRIPTS (isolated scope) ──────────────────────── */
 (function() {
 
-/* PROGRESS BAR */
-var prog = document.getElementById('prog');
-var raf = false;
-window.addEventListener('scroll', function() {
-  if (raf) return; raf = true;
-  requestAnimationFrame(function() {
-    var s = window.scrollY, t = document.body.scrollHeight - window.innerHeight;
-    prog.style.width = Math.min((s/t)*100, 100) + '%';
-    raf = false;
-  });
-}, {passive: true});
 
 /* SCROLL REVEAL */
 var obs = new IntersectionObserver(function(entries) {
@@ -3287,6 +3352,7 @@ function initResearch() {
   if (window.cuObs) document.querySelectorAll('#view-research [data-target]').forEach(function(el){ window.cuObs.observe(el); });
   if (window.bObs)  document.querySelectorAll('#view-research .cf-bar-fill').forEach(function(el){ window.bObs.observe(el); });
   if (window.calcUpdate) window.calcUpdate();
+  if (window.refreshOffsets) window.refreshOffsets();
 }
 
 /* ─── RESEARCH SCRIPTS (isolated scope) ────────────────────── */
@@ -3304,29 +3370,6 @@ dmBtn.addEventListener('click', () => {
   refreshAllCharts();
 });
 
-/* PROGRESS */
-const progressBar = document.getElementById('progress-bar');
-const scrollTopBtn = document.getElementById('scrollTop');
-let rafP = false;
-window.addEventListener('scroll', () => {
-  if (rafP) return; rafP = true;
-  requestAnimationFrame(() => {
-    const s = window.scrollY, t = document.body.scrollHeight - window.innerHeight;
-    progressBar.style.width = Math.min((s/t)*100,100)+'%';
-    scrollTopBtn.classList.toggle('show', s > 400);
-    rafP = false;
-  });
-}, {passive:true});
-
-/* NAV ACTIVE */
-const navLinks = document.querySelectorAll('.nav-link');
-const sectionIds = ['findings','analysis','data','cases','perspectives','scenarios','calculator','glossary','sources'];
-window.addEventListener('scroll', () => {
-  const y = window.scrollY + 130;
-  let cur = '';
-  sectionIds.forEach(id => { const el = document.getElementById(id); if (el && el.offsetTop <= y) cur = id; });
-  navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#'+cur));
-}, {passive:true});
 
 /* GLOSSARY TOGGLE */
 function toggleGl(trigger) {
@@ -3797,23 +3840,6 @@ function shareURL() {
 }
 window.shareURL = shareURL;
 
-/* ── READING PROGRESS ─────────────────────────────────────── */
-(function() {
-  var navProg = document.getElementById('nav-progress');
-  if (!navProg) return;
-  var ticking = false;
-  window.addEventListener('scroll', function() {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(function() {
-      var scrolled = window.scrollY;
-      var total    = document.body.scrollHeight - window.innerHeight;
-      var pct      = total > 0 ? Math.round((scrolled / total) * 100) : 0;
-      navProg.textContent = pct + '% read';
-      ticking = false;
-    });
-  }, { passive: true });
-})();
 
 /* ── GLOSSARY SMOOTH EXPAND ───────────────────────────────── */
 window.toggleGl = function(el) {
