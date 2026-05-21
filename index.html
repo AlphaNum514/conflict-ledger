@@ -3080,6 +3080,10 @@ window.switchView = function switchView(v) {
   document.getElementById('tab-research').classList.toggle('sw-active', isRes);
   window.scrollTo(0, 0);
   if (isRes && !window._resInited) { window._resInited = true; initResearch(); }
+  if (isRes && window.refreshOffsets) {
+    // Small delay to allow visibility toggle to finish
+    setTimeout(window.refreshOffsets, 50);
+  }
 };
 
 /* ─── SIMPLE SCRIPTS (isolated scope) ──────────────────────── */
@@ -3304,29 +3308,70 @@ dmBtn.addEventListener('click', () => {
   refreshAllCharts();
 });
 
-/* PROGRESS */
+/* UNIFIED SCROLL HANDLER (Consolidated & Cached) */
 const progressBar = document.getElementById('progress-bar');
 const scrollTopBtn = document.getElementById('scrollTop');
-let rafP = false;
-window.addEventListener('scroll', () => {
-  if (rafP) return; rafP = true;
-  requestAnimationFrame(() => {
-    const s = window.scrollY, t = document.body.scrollHeight - window.innerHeight;
-    progressBar.style.width = Math.min((s/t)*100,100)+'%';
-    scrollTopBtn.classList.toggle('show', s > 400);
-    rafP = false;
-  });
-}, {passive:true});
-
-/* NAV ACTIVE */
+const navProg = document.getElementById('nav-progress');
 const navLinks = document.querySelectorAll('.nav-link');
-const sectionIds = ['findings','analysis','data','cases','perspectives','scenarios','calculator','glossary','sources'];
+const navLinkMap = {};
+navLinks.forEach(l => {
+  const href = l.getAttribute('href');
+  if (href) navLinkMap[href.slice(1)] = l;
+});
+
+const sectionIds = ['findings','analysis','map','data','cases','perspectives','scenarios','calculator','glossary','sources'];
+let sectionOffsets = [];
+let maxScroll = 1;
+let rafPending = false;
+
+window.refreshOffsets = function() {
+  sectionOffsets = sectionIds.map(id => {
+    const el = document.getElementById(id);
+    let top = 0;
+    if (el) {
+      let curr = el;
+      while (curr && curr !== document.body) {
+        top += curr.offsetTop;
+        curr = curr.offsetParent;
+      }
+    }
+    return { id, top };
+  });
+  maxScroll = Math.max(1, document.body.scrollHeight - window.innerHeight);
+};
+
 window.addEventListener('scroll', () => {
-  const y = window.scrollY + 130;
-  let cur = '';
-  sectionIds.forEach(id => { const el = document.getElementById(id); if (el && el.offsetTop <= y) cur = id; });
-  navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#'+cur));
-}, {passive:true});
+  if (rafPending) return;
+  rafPending = true;
+  requestAnimationFrame(() => {
+    const y = Math.max(0, window.scrollY);
+
+    // 1. Progress bars
+    const pct = Math.min((y / maxScroll) * 100, 100);
+    if (progressBar) progressBar.style.width = pct + '%';
+    if (navProg) navProg.textContent = Math.round(pct) + '% read';
+
+    // 2. Scroll-to-top button
+    if (scrollTopBtn) scrollTopBtn.classList.toggle('show', y > 400);
+
+    // 3. Navigation highlighting
+    const activeY = y + 130;
+    let currentSection = '';
+    for (let i = sectionOffsets.length - 1; i >= 0; i--) {
+      if (sectionOffsets[i].top <= activeY) {
+        currentSection = sectionOffsets[i].id;
+        break;
+      }
+    }
+    navLinks.forEach(l => l.classList.remove('active'));
+    if (navLinkMap[currentSection]) navLinkMap[currentSection].classList.add('active');
+
+    rafPending = false;
+  });
+}, { passive: true });
+
+window.addEventListener('resize', () => { if(window.refreshOffsets) window.refreshOffsets(); });
+window.addEventListener('load', () => { if(window.refreshOffsets) window.refreshOffsets(); });
 
 /* GLOSSARY TOGGLE */
 function toggleGl(trigger) {
@@ -3554,6 +3599,7 @@ function applyPreset(name) {
   document.getElementById('sl-intensity').value  = p.intensity;
   document.getElementById('sl-oil').value        = p.oil;
   calcUpdate();
+  if (window.refreshOffsets) setTimeout(window.refreshOffsets, 50);
 }
 
 function calcUpdate() {
@@ -3797,23 +3843,6 @@ function shareURL() {
 }
 window.shareURL = shareURL;
 
-/* ── READING PROGRESS ─────────────────────────────────────── */
-(function() {
-  var navProg = document.getElementById('nav-progress');
-  if (!navProg) return;
-  var ticking = false;
-  window.addEventListener('scroll', function() {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(function() {
-      var scrolled = window.scrollY;
-      var total    = document.body.scrollHeight - window.innerHeight;
-      var pct      = total > 0 ? Math.round((scrolled / total) * 100) : 0;
-      navProg.textContent = pct + '% read';
-      ticking = false;
-    });
-  }, { passive: true });
-})();
 
 /* ── GLOSSARY SMOOTH EXPAND ───────────────────────────────── */
 window.toggleGl = function(el) {
@@ -3831,6 +3860,7 @@ window.toggleGl = function(el) {
     el.setAttribute('aria-expanded', 'true');
     if (arrow) arrow.style.transform = 'rotate(90deg)';
   }
+  if (window.refreshOffsets) setTimeout(window.refreshOffsets, 350);
 };
 
 /* ── MAP PULSE ON HOVER ───────────────────────────────────── */
@@ -3875,6 +3905,7 @@ window.showScenario = function(name) {
     activeBtn.setAttribute('aria-pressed', 'true');
     activeBtn.classList.add('s-active');
   }
+  if (window.refreshOffsets) setTimeout(window.refreshOffsets, 50);
 };
 
 /* ── SECTOR TABLE — add inline color bars dynamically ─────── */
