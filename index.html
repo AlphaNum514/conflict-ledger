@@ -3080,6 +3080,8 @@ window.switchView = function switchView(v) {
   document.getElementById('tab-research').classList.toggle('sw-active', isRes);
   window.scrollTo(0, 0);
   if (isRes && !window._resInited) { window._resInited = true; initResearch(); }
+  // ⚡ Bolt: Recalculate offsets after switching views and small delay for layout pass
+  if (window.refreshOffsets) setTimeout(window.refreshOffsets, 50);
 };
 
 /* ─── SIMPLE SCRIPTS (isolated scope) ──────────────────────── */
@@ -3089,10 +3091,12 @@ window.switchView = function switchView(v) {
 var prog = document.getElementById('prog');
 var raf = false;
 window.addEventListener('scroll', function() {
+  // ⚡ Bolt: Exit early if Research view is active to save main thread cycles
+  if (document.body.classList.contains('show-research')) return;
   if (raf) return; raf = true;
   requestAnimationFrame(function() {
-    var s = window.scrollY, t = document.body.scrollHeight - window.innerHeight;
-    prog.style.width = Math.min((s/t)*100, 100) + '%';
+    var s = Math.max(0, window.scrollY), t = document.body.scrollHeight - window.innerHeight;
+    prog.style.width = Math.min((s/(t||1))*100, 100) + '%';
     raf = false;
   });
 }, {passive: true});
@@ -3304,35 +3308,84 @@ dmBtn.addEventListener('click', () => {
   refreshAllCharts();
 });
 
-/* PROGRESS */
-const progressBar = document.getElementById('progress-bar');
-const scrollTopBtn = document.getElementById('scrollTop');
-let rafP = false;
-window.addEventListener('scroll', () => {
-  if (rafP) return; rafP = true;
-  requestAnimationFrame(() => {
-    const s = window.scrollY, t = document.body.scrollHeight - window.innerHeight;
-    progressBar.style.width = Math.min((s/t)*100,100)+'%';
-    scrollTopBtn.classList.toggle('show', s > 400);
-    rafP = false;
+/* UNIFIED SCROLL HANDLER */
+// ⚡ Bolt: Consolidate scroll listeners and cache layout values to prevent layout thrashing
+(function() {
+  const progressBar = document.getElementById('progress-bar');
+  const scrollTopBtn = document.getElementById('scrollTop');
+  const navProg = document.getElementById('nav-progress');
+  const navLinks = Array.from(document.querySelectorAll('.nav-link'));
+  const sectionIds = ['findings','analysis','map','data','cases','perspectives','scenarios','calculator','glossary','sources'];
+  const navLinkMap = {};
+  navLinks.forEach(l => {
+    const href = l.getAttribute('href');
+    if (href && href.startsWith('#')) navLinkMap[href.substring(1)] = l;
   });
-}, {passive:true});
 
-/* NAV ACTIVE */
-const navLinks = document.querySelectorAll('.nav-link');
-const sectionIds = ['findings','analysis','data','cases','perspectives','scenarios','calculator','glossary','sources'];
-window.addEventListener('scroll', () => {
-  const y = window.scrollY + 130;
-  let cur = '';
-  sectionIds.forEach(id => { const el = document.getElementById(id); if (el && el.offsetTop <= y) cur = id; });
-  navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#'+cur));
-}, {passive:true});
+  let sectionOffsets = [];
+  let maxScroll = 1;
+  let rafPending = false;
+  let activeSection = '';
+
+  window.refreshOffsets = function() {
+    maxScroll = document.body.scrollHeight - window.innerHeight || 1;
+    sectionOffsets = sectionIds.map(id => {
+      const el = document.getElementById(id);
+      if (!el) return { id, top: 0 };
+      // Accurate offset calculation for sticky/nested layouts
+      let top = 0, curr = el;
+      while (curr && curr !== document.body) {
+        top += curr.offsetTop;
+        curr = curr.offsetParent;
+      }
+      return { id, top: top - 130 };
+    });
+  };
+
+  window.addEventListener('scroll', () => {
+    if (!document.body.classList.contains('show-research')) return;
+    if (rafPending) return;
+    rafPending = true;
+
+    requestAnimationFrame(() => {
+      const s = Math.max(0, window.scrollY);
+
+      // 1. Progress Bar & Reading Progress
+      const pct = Math.min((s / maxScroll) * 100, 100);
+      if (progressBar) progressBar.style.width = pct + '%';
+      if (navProg) navProg.textContent = Math.round(pct) + '% read';
+
+      // 2. Scroll Top Button
+      if (scrollTopBtn) scrollTopBtn.classList.toggle('show', s > 400);
+
+      // 3. Nav Active Highlighting
+      let cur = '';
+      for (let i = sectionOffsets.length - 1; i >= 0; i--) {
+        if (s >= sectionOffsets[i].top) {
+          cur = sectionOffsets[i].id;
+          break;
+        }
+      }
+      if (cur !== activeSection) {
+        if (activeSection && navLinkMap[activeSection]) navLinkMap[activeSection].classList.remove('active');
+        if (cur && navLinkMap[cur]) navLinkMap[cur].classList.add('active');
+        activeSection = cur;
+      }
+
+      rafPending = false;
+    });
+  }, { passive: true });
+
+  window.addEventListener('resize', window.refreshOffsets);
+  window.addEventListener('load', window.refreshOffsets);
+  // ⚡ Bolt: Initial offset calculation
+  window.refreshOffsets();
+})();
 
 /* GLOSSARY TOGGLE */
 function toggleGl(trigger) {
-  const def = trigger.nextElementSibling;
-  trigger.classList.toggle('open');
-  def.classList.toggle('open');
+  // ⚡ Bolt: Redirect to the enhanced global window.toggleGl
+  if (window.toggleGl) window.toggleGl(trigger);
 }
 
 /* FOOTNOTE SCROLL — Safari-safe */
@@ -3797,23 +3850,6 @@ function shareURL() {
 }
 window.shareURL = shareURL;
 
-/* ── READING PROGRESS ─────────────────────────────────────── */
-(function() {
-  var navProg = document.getElementById('nav-progress');
-  if (!navProg) return;
-  var ticking = false;
-  window.addEventListener('scroll', function() {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(function() {
-      var scrolled = window.scrollY;
-      var total    = document.body.scrollHeight - window.innerHeight;
-      var pct      = total > 0 ? Math.round((scrolled / total) * 100) : 0;
-      navProg.textContent = pct + '% read';
-      ticking = false;
-    });
-  }, { passive: true });
-})();
 
 /* ── GLOSSARY SMOOTH EXPAND ───────────────────────────────── */
 window.toggleGl = function(el) {
@@ -3831,6 +3867,8 @@ window.toggleGl = function(el) {
     el.setAttribute('aria-expanded', 'true');
     if (arrow) arrow.style.transform = 'rotate(90deg)';
   }
+  // ⚡ Bolt: Recalculate offsets after transition finishes
+  if (window.refreshOffsets) setTimeout(window.refreshOffsets, 350);
 };
 
 /* ── MAP PULSE ON HOVER ───────────────────────────────────── */
@@ -3866,6 +3904,8 @@ window.initConflictMap = function() {
 var _origShowScenario = window.showScenario;
 window.showScenario = function(name) {
   if (_origShowScenario) _origShowScenario(name);
+  // ⚡ Bolt: Recalculate offsets as scenarios can change layout height
+  if (window.refreshOffsets) setTimeout(window.refreshOffsets, 50);
   document.querySelectorAll('.sc-btn').forEach(function(btn) {
     btn.setAttribute('aria-pressed', 'false');
     btn.classList.remove('s-active');
