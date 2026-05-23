@@ -3070,6 +3070,12 @@ body.show-research .nav-progress { display: block; }
 </div>
 
 <script>
+/* ─── GLOBAL: LAYOUT CACHE ─────────────────────────────────── */
+/* Interface for the unified scroll handler to refresh its layout cache */
+window.refreshOffsets = function() {
+  if (window._doRefreshOffsets) window._doRefreshOffsets();
+};
+
 /* ─── GLOBAL: VIEW SWITCHER ────────────────────────────────── */
 /* Explicitly expose switchView globally */
 window.switchView = function switchView(v) {
@@ -3080,22 +3086,12 @@ window.switchView = function switchView(v) {
   document.getElementById('tab-research').classList.toggle('sw-active', isRes);
   window.scrollTo(0, 0);
   if (isRes && !window._resInited) { window._resInited = true; initResearch(); }
+  setTimeout(function() { window.refreshOffsets(); }, 50);
 };
 
 /* ─── SIMPLE SCRIPTS (isolated scope) ──────────────────────── */
 (function() {
 
-/* PROGRESS BAR */
-var prog = document.getElementById('prog');
-var raf = false;
-window.addEventListener('scroll', function() {
-  if (raf) return; raf = true;
-  requestAnimationFrame(function() {
-    var s = window.scrollY, t = document.body.scrollHeight - window.innerHeight;
-    prog.style.width = Math.min((s/t)*100, 100) + '%';
-    raf = false;
-  });
-}, {passive: true});
 
 /* SCROLL REVEAL */
 var obs = new IntersectionObserver(function(entries) {
@@ -3304,29 +3300,6 @@ dmBtn.addEventListener('click', () => {
   refreshAllCharts();
 });
 
-/* PROGRESS */
-const progressBar = document.getElementById('progress-bar');
-const scrollTopBtn = document.getElementById('scrollTop');
-let rafP = false;
-window.addEventListener('scroll', () => {
-  if (rafP) return; rafP = true;
-  requestAnimationFrame(() => {
-    const s = window.scrollY, t = document.body.scrollHeight - window.innerHeight;
-    progressBar.style.width = Math.min((s/t)*100,100)+'%';
-    scrollTopBtn.classList.toggle('show', s > 400);
-    rafP = false;
-  });
-}, {passive:true});
-
-/* NAV ACTIVE */
-const navLinks = document.querySelectorAll('.nav-link');
-const sectionIds = ['findings','analysis','data','cases','perspectives','scenarios','calculator','glossary','sources'];
-window.addEventListener('scroll', () => {
-  const y = window.scrollY + 130;
-  let cur = '';
-  sectionIds.forEach(id => { const el = document.getElementById(id); if (el && el.offsetTop <= y) cur = id; });
-  navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#'+cur));
-}, {passive:true});
 
 /* GLOSSARY TOGGLE */
 function toggleGl(trigger) {
@@ -3797,23 +3770,6 @@ function shareURL() {
 }
 window.shareURL = shareURL;
 
-/* ── READING PROGRESS ─────────────────────────────────────── */
-(function() {
-  var navProg = document.getElementById('nav-progress');
-  if (!navProg) return;
-  var ticking = false;
-  window.addEventListener('scroll', function() {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(function() {
-      var scrolled = window.scrollY;
-      var total    = document.body.scrollHeight - window.innerHeight;
-      var pct      = total > 0 ? Math.round((scrolled / total) * 100) : 0;
-      navProg.textContent = pct + '% read';
-      ticking = false;
-    });
-  }, { passive: true });
-})();
 
 /* ── GLOSSARY SMOOTH EXPAND ───────────────────────────────── */
 window.toggleGl = function(el) {
@@ -3831,6 +3787,7 @@ window.toggleGl = function(el) {
     el.setAttribute('aria-expanded', 'true');
     if (arrow) arrow.style.transform = 'rotate(90deg)';
   }
+  setTimeout(function() { window.refreshOffsets(); }, 400);
 };
 
 /* ── MAP PULSE ON HOVER ───────────────────────────────────── */
@@ -3875,6 +3832,7 @@ window.showScenario = function(name) {
     activeBtn.setAttribute('aria-pressed', 'true');
     activeBtn.classList.add('s-active');
   }
+  setTimeout(function() { window.refreshOffsets(); }, 100);
 };
 
 /* ── SECTOR TABLE — add inline color bars dynamically ─────── */
@@ -3928,6 +3886,67 @@ document.addEventListener('keydown', function(e) {
     }
   }
 });
+
+/* ─── UNIFIED SCROLL HANDLER (⚡ BOLT OPTIMIZATION) ───────── */
+(function() {
+  var progSimple = document.getElementById('prog');
+  var progRes    = document.getElementById('progress-bar');
+  var navText    = document.getElementById('nav-progress');
+  var topBtn     = document.getElementById('scrollTop');
+  var navLinks   = document.querySelectorAll('.nav-link');
+  var sectionIds = ['findings','analysis','map','data','cases','perspectives','scenarios','calculator','glossary','sources'];
+  var sectionOffsets = {};
+  var maxScroll = 1;
+  var rafPending = false;
+
+  function refresh() {
+    maxScroll = Math.max(document.body.scrollHeight - window.innerHeight, 1);
+    sectionIds.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) {
+        var offset = 0, node = el;
+        while (node) { offset += node.offsetTop; node = node.offsetParent; }
+        sectionOffsets[id] = offset;
+      }
+    });
+  }
+  window._doRefreshOffsets = refresh;
+
+  function update() {
+    var s = Math.max(0, window.scrollY);
+    var pct = Math.min((s / maxScroll) * 100, 100);
+    var pctInt = Math.round(pct);
+
+    // Update progress elements
+    if (progSimple) progSimple.style.width = pct + '%';
+    if (progRes)    progRes.style.width    = pct + '%';
+    if (navText)    navText.textContent    = pctInt + '% read';
+    if (topBtn)     topBtn.classList.toggle('show', s > 400);
+
+    // Update nav links highlighting
+    var yThreshold = s + 130;
+    var cur = '';
+    for (var i = 0; i < sectionIds.length; i++) {
+      var id = sectionIds[i];
+      if (typeof sectionOffsets[id] !== 'undefined' && sectionOffsets[id] <= yThreshold) cur = id;
+    }
+    navLinks.forEach(function(l) {
+      l.classList.toggle('active', l.getAttribute('href') === '#' + cur);
+    });
+
+    rafPending = false;
+  }
+
+  window.addEventListener('scroll', function() {
+    if (rafPending) return;
+    rafPending = true;
+    requestAnimationFrame(update);
+  }, { passive: true });
+
+  window.addEventListener('resize', refresh);
+  window.addEventListener('load', refresh);
+  refresh();
+})();
 
 /* ══ END UPGRADES ════════════════════════════════════════════ */
 </script>

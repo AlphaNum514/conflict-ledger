@@ -1,0 +1,3 @@
+## 2025-05-15 - [Consolidated Scroll Handlers & Layout Caching]
+**Learning:** Multiple independent scroll listeners using `offsetTop` and `scrollHeight` cause significant layout thrashing. Even when throttled by `requestAnimationFrame` individually, they trigger redundant calculations of the same layout properties. Consolidating into a single listener with a shared layout cache (refreshed only on resize or DOM mutation) dramatically reduces main-thread work.
+**Action:** Always check for redundant high-frequency event listeners (scroll, resize, mousemove). Consolidate them into a single throttled handler and use a layout cache for any values that trigger reflow (like `offsetTop`).
