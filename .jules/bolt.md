@@ -1,0 +1,3 @@
+## 2025-05-24 - Layout Thrashing via Unthrottled Scroll Listeners
+**Learning:** Multiple independent scroll listeners accessing layout-triggering properties (like `offsetTop` or `scrollHeight`) cause "forced synchronous layouts" (layout thrashing), significantly degrading performance during user interaction.
+**Action:** Consolidate multiple scroll-dependent features into a single unified listener throttled by `requestAnimationFrame`. Cache layout values (offsets, heights) outside the scroll loop and only recalculate them on specific invalidation events like window resize or content expansion/toggles.
