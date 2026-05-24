@@ -3080,22 +3080,11 @@ window.switchView = function switchView(v) {
   document.getElementById('tab-research').classList.toggle('sw-active', isRes);
   window.scrollTo(0, 0);
   if (isRes && !window._resInited) { window._resInited = true; initResearch(); }
+  if (window.refreshOffsets) window.refreshOffsets();
 };
 
 /* ─── SIMPLE SCRIPTS (isolated scope) ──────────────────────── */
 (function() {
-
-/* PROGRESS BAR */
-var prog = document.getElementById('prog');
-var raf = false;
-window.addEventListener('scroll', function() {
-  if (raf) return; raf = true;
-  requestAnimationFrame(function() {
-    var s = window.scrollY, t = document.body.scrollHeight - window.innerHeight;
-    prog.style.width = Math.min((s/t)*100, 100) + '%';
-    raf = false;
-  });
-}, {passive: true});
 
 /* SCROLL REVEAL */
 var obs = new IntersectionObserver(function(entries) {
@@ -3251,6 +3240,9 @@ function showScenario(name) {
   document.querySelector('.sc-btn.' + name).classList.add('s-active');
 
   document.getElementById('sc-output').classList.add('s-show');
+
+  // Layout changed (scenario details revealed)
+  if (window.refreshOffsets) window.refreshOffsets();
 }
 
 
@@ -3303,30 +3295,6 @@ dmBtn.addEventListener('click', () => {
   dmBtn.textContent = dark ? '☀ LIGHT' : '☾ DARK';
   refreshAllCharts();
 });
-
-/* PROGRESS */
-const progressBar = document.getElementById('progress-bar');
-const scrollTopBtn = document.getElementById('scrollTop');
-let rafP = false;
-window.addEventListener('scroll', () => {
-  if (rafP) return; rafP = true;
-  requestAnimationFrame(() => {
-    const s = window.scrollY, t = document.body.scrollHeight - window.innerHeight;
-    progressBar.style.width = Math.min((s/t)*100,100)+'%';
-    scrollTopBtn.classList.toggle('show', s > 400);
-    rafP = false;
-  });
-}, {passive:true});
-
-/* NAV ACTIVE */
-const navLinks = document.querySelectorAll('.nav-link');
-const sectionIds = ['findings','analysis','data','cases','perspectives','scenarios','calculator','glossary','sources'];
-window.addEventListener('scroll', () => {
-  const y = window.scrollY + 130;
-  let cur = '';
-  sectionIds.forEach(id => { const el = document.getElementById(id); if (el && el.offsetTop <= y) cur = id; });
-  navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#'+cur));
-}, {passive:true});
 
 /* GLOSSARY TOGGLE */
 function toggleGl(trigger) {
@@ -3797,24 +3765,6 @@ function shareURL() {
 }
 window.shareURL = shareURL;
 
-/* ── READING PROGRESS ─────────────────────────────────────── */
-(function() {
-  var navProg = document.getElementById('nav-progress');
-  if (!navProg) return;
-  var ticking = false;
-  window.addEventListener('scroll', function() {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(function() {
-      var scrolled = window.scrollY;
-      var total    = document.body.scrollHeight - window.innerHeight;
-      var pct      = total > 0 ? Math.round((scrolled / total) * 100) : 0;
-      navProg.textContent = pct + '% read';
-      ticking = false;
-    });
-  }, { passive: true });
-})();
-
 /* ── GLOSSARY SMOOTH EXPAND ───────────────────────────────── */
 window.toggleGl = function(el) {
   var def      = el.nextElementSibling;
@@ -3831,6 +3781,8 @@ window.toggleGl = function(el) {
     el.setAttribute('aria-expanded', 'true');
     if (arrow) arrow.style.transform = 'rotate(90deg)';
   }
+  // Layout changed (glossary expanded/collapsed)
+  setTimeout(function() { if (window.refreshOffsets) window.refreshOffsets(); }, 350);
 };
 
 /* ── MAP PULSE ON HOVER ───────────────────────────────────── */
@@ -3928,6 +3880,76 @@ document.addEventListener('keydown', function(e) {
     }
   }
 });
+
+/* ── UNIFIED SCROLL HANDLER ──────────────────────────────── */
+(function() {
+  var progSimple = document.getElementById('prog');
+  var progRes    = document.getElementById('progress-bar');
+  var navProg    = document.getElementById('nav-progress');
+  var scrollBtn  = document.getElementById('scrollTop');
+  var navLinks   = document.querySelectorAll('.nav-link');
+  var sectionIds = ['findings','analysis','data','cases','perspectives','scenarios','calculator','glossary','sources'];
+
+  var sectionOffsets = {};
+  var maxScroll = 0;
+  var rafPending = false;
+  var navLinkMap = [];
+
+  // Cache link targets to avoid DOM lookups during scroll
+  navLinks.forEach(function(link) {
+    navLinkMap.push({ el: link, href: link.getAttribute('href') });
+  });
+
+  window.refreshOffsets = function() {
+    sectionIds.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) sectionOffsets[id] = el.offsetTop;
+    });
+    maxScroll = document.body.scrollHeight - window.innerHeight;
+  };
+
+  window.addEventListener('scroll', function() {
+    if (rafPending) return;
+    rafPending = true;
+    requestAnimationFrame(update);
+  }, { passive: true });
+
+  function update() {
+    var y = window.scrollY;
+    var pct = maxScroll > 0 ? Math.min((y / maxScroll) * 100, 100) : 0;
+
+    // 1. Progress Bars
+    if (progSimple) progSimple.style.width = pct + '%';
+    if (progRes)    progRes.style.width    = pct + '%';
+    if (navProg)    navProg.textContent    = Math.round(pct) + '% read';
+
+    // 2. Scroll Top Button
+    if (scrollBtn) scrollBtn.classList.toggle('show', y > 400);
+
+    // 3. Nav Highlighting (Research View)
+    if (document.body.classList.contains('show-research')) {
+      var cur = '';
+      var triggerY = y + 130;
+      for (var i = 0; i < sectionIds.length; i++) {
+        var id = sectionIds[i];
+        if (sectionOffsets[id] <= triggerY) cur = id;
+      }
+      for (var j = 0; j < navLinkMap.length; j++) {
+        var item = navLinkMap[j];
+        item.el.classList.toggle('active', item.href === '#' + cur);
+      }
+    }
+
+    rafPending = false;
+  }
+
+  // Initial calculation
+  window.refreshOffsets();
+  // Ensure we refresh when content might have changed size
+  window.addEventListener('resize', window.refreshOffsets);
+  window.addEventListener('load', window.refreshOffsets);
+  document.addEventListener('DOMContentLoaded', window.refreshOffsets);
+})();
 
 /* ══ END UPGRADES ════════════════════════════════════════════ */
 </script>
