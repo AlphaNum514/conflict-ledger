@@ -3080,6 +3080,7 @@ window.switchView = function switchView(v) {
   document.getElementById('tab-research').classList.toggle('sw-active', isRes);
   window.scrollTo(0, 0);
   if (isRes && !window._resInited) { window._resInited = true; initResearch(); }
+  else if (isRes && window.refreshOffsets) { window.refreshOffsets(); }
 };
 
 /* ─── SIMPLE SCRIPTS (isolated scope) ──────────────────────── */
@@ -3287,10 +3288,24 @@ function initResearch() {
   if (window.cuObs) document.querySelectorAll('#view-research [data-target]').forEach(function(el){ window.cuObs.observe(el); });
   if (window.bObs)  document.querySelectorAll('#view-research .cf-bar-fill').forEach(function(el){ window.bObs.observe(el); });
   if (window.calcUpdate) window.calcUpdate();
+  if (window.refreshOffsets) window.refreshOffsets();
 }
 
 /* ─── RESEARCH SCRIPTS (isolated scope) ────────────────────── */
 (function() {
+
+const sectionIds = ['findings','analysis','data','cases','perspectives','scenarios','calculator','glossary','sources'];
+
+/* LAYOUT CACHE */
+let sectionOffsets = {};
+let maxScroll = 1;
+window.refreshOffsets = function() {
+  sectionIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) sectionOffsets[id] = el.offsetTop;
+  });
+  maxScroll = Math.max(1, document.body.scrollHeight - window.innerHeight);
+};
 
 /* THEME */
 const html = document.documentElement;
@@ -3304,36 +3319,45 @@ dmBtn.addEventListener('click', () => {
   refreshAllCharts();
 });
 
-/* PROGRESS */
+/* UNIFIED SCROLL HANDLER */
 const progressBar = document.getElementById('progress-bar');
 const scrollTopBtn = document.getElementById('scrollTop');
-let rafP = false;
-window.addEventListener('scroll', () => {
-  if (rafP) return; rafP = true;
-  requestAnimationFrame(() => {
-    const s = window.scrollY, t = document.body.scrollHeight - window.innerHeight;
-    progressBar.style.width = Math.min((s/t)*100,100)+'%';
-    scrollTopBtn.classList.toggle('show', s > 400);
-    rafP = false;
-  });
-}, {passive:true});
-
-/* NAV ACTIVE */
 const navLinks = document.querySelectorAll('.nav-link');
-const sectionIds = ['findings','analysis','data','cases','perspectives','scenarios','calculator','glossary','sources'];
+const navProg = document.getElementById('nav-progress');
+let rafPending = false;
 window.addEventListener('scroll', () => {
-  const y = window.scrollY + 130;
-  let cur = '';
-  sectionIds.forEach(id => { const el = document.getElementById(id); if (el && el.offsetTop <= y) cur = id; });
-  navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#'+cur));
-}, {passive:true});
+  if (rafPending) return;
+  rafPending = true;
 
-/* GLOSSARY TOGGLE */
-function toggleGl(trigger) {
-  const def = trigger.nextElementSibling;
-  trigger.classList.toggle('open');
-  def.classList.toggle('open');
-}
+  requestAnimationFrame(() => {
+    const y = window.scrollY;
+
+    // 1. Progress Bar & Reading Percentage
+    const pct = maxScroll > 0 ? Math.min((y / maxScroll) * 100, 100) : 0;
+    if (progressBar) progressBar.style.width = pct + '%';
+    if (navProg) navProg.textContent = Math.round(pct) + '% read';
+
+    // 2. Scroll Top Button
+    if (scrollTopBtn) scrollTopBtn.classList.toggle('show', y > 400);
+
+    // 3. Nav Highlighting
+    let cur = '';
+    const yThreshold = y + 130;
+    sectionIds.forEach(id => {
+      if (typeof sectionOffsets[id] !== 'undefined' && sectionOffsets[id] <= yThreshold) cur = id;
+    });
+    navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + cur));
+
+
+    rafPending = false;
+  });
+}, {passive: true});
+
+/* RESIZE & LOAD */
+window.addEventListener('resize', () => { if(window.refreshOffsets) window.refreshOffsets(); }, {passive:true});
+window.addEventListener('load', () => { if(window.refreshOffsets) window.refreshOffsets(); });
+
+/* GLOSSARY TOGGLE (Research view uses window.toggleGl below) */
 
 /* FOOTNOTE SCROLL — Safari-safe */
 function scrollToFn(n) {
@@ -3797,23 +3821,6 @@ function shareURL() {
 }
 window.shareURL = shareURL;
 
-/* ── READING PROGRESS ─────────────────────────────────────── */
-(function() {
-  var navProg = document.getElementById('nav-progress');
-  if (!navProg) return;
-  var ticking = false;
-  window.addEventListener('scroll', function() {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(function() {
-      var scrolled = window.scrollY;
-      var total    = document.body.scrollHeight - window.innerHeight;
-      var pct      = total > 0 ? Math.round((scrolled / total) * 100) : 0;
-      navProg.textContent = pct + '% read';
-      ticking = false;
-    });
-  }, { passive: true });
-})();
 
 /* ── GLOSSARY SMOOTH EXPAND ───────────────────────────────── */
 window.toggleGl = function(el) {
@@ -3831,6 +3838,8 @@ window.toggleGl = function(el) {
     el.setAttribute('aria-expanded', 'true');
     if (arrow) arrow.style.transform = 'rotate(90deg)';
   }
+  // Layout changed, refresh offsets after a short delay for animation
+  setTimeout(function() { if(window.refreshOffsets) window.refreshOffsets(); }, 350);
 };
 
 /* ── MAP PULSE ON HOVER ───────────────────────────────────── */
