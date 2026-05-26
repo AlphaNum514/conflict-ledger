@@ -3080,6 +3080,7 @@ window.switchView = function switchView(v) {
   document.getElementById('tab-research').classList.toggle('sw-active', isRes);
   window.scrollTo(0, 0);
   if (isRes && !window._resInited) { window._resInited = true; initResearch(); }
+  if (window.refreshOffsets) window.refreshOffsets();
 };
 
 /* ─── SIMPLE SCRIPTS (isolated scope) ──────────────────────── */
@@ -3304,36 +3305,77 @@ dmBtn.addEventListener('click', () => {
   refreshAllCharts();
 });
 
-/* PROGRESS */
+/* CONSOLIDATED SCROLL HANDLER & LAYOUT CACHE */
 const progressBar = document.getElementById('progress-bar');
 const scrollTopBtn = document.getElementById('scrollTop');
-let rafP = false;
+const navProg = document.getElementById('nav-progress');
+const sectionIds = ['findings', 'analysis', 'map', 'data', 'cases', 'perspectives', 'scenarios', 'calculator', 'glossary', 'sources'];
+const navLinkMap = {};
+const sectionEls = {};
+sectionIds.forEach(id => {
+  navLinkMap[id] = document.querySelector(`.nav-link[href="#${id}"]`);
+  sectionEls[id] = document.getElementById(id);
+});
+
+let sectionOffsets = {};
+let maxScroll = 1;
+let rafPending = false;
+
+window.refreshOffsets = function() {
+  const isResearch = document.body.classList.contains('show-research');
+  if (isResearch) {
+    sectionIds.forEach(id => {
+      const el = sectionEls[id];
+      if (el) {
+        let offset = 0;
+        let curr = el;
+        while (curr && !isNaN(curr.offsetTop)) {
+          offset += curr.offsetTop;
+          curr = curr.offsetParent;
+        }
+        sectionOffsets[id] = offset;
+      }
+    });
+  }
+  maxScroll = Math.max(document.body.scrollHeight - window.innerHeight, 1);
+};
+
 window.addEventListener('scroll', () => {
-  if (rafP) return; rafP = true;
+  if (rafPending) return;
+  rafPending = true;
   requestAnimationFrame(() => {
-    const s = window.scrollY, t = document.body.scrollHeight - window.innerHeight;
-    progressBar.style.width = Math.min((s/t)*100,100)+'%';
-    scrollTopBtn.classList.toggle('show', s > 400);
-    rafP = false;
+    const y = Math.max(0, window.scrollY);
+    const pct = Math.min((y / maxScroll) * 100, 100);
+
+    if (progressBar) progressBar.style.width = pct + '%';
+    if (navProg) navProg.textContent = Math.round(pct) + '% read';
+    if (scrollTopBtn) scrollTopBtn.classList.toggle('show', y > 400);
+
+    const checkY = y + 130;
+    let currentId = '';
+    for (let i = 0; i < sectionIds.length; i++) {
+      const id = sectionIds[i];
+      if (typeof sectionOffsets[id] !== 'undefined' && sectionOffsets[id] <= checkY) {
+        currentId = id;
+      } else {
+        break;
+      }
+    }
+    sectionIds.forEach(id => {
+      if (navLinkMap[id]) navLinkMap[id].classList.toggle('active', id === currentId);
+    });
+    rafPending = false;
   });
-}, {passive:true});
+}, { passive: true });
 
-/* NAV ACTIVE */
-const navLinks = document.querySelectorAll('.nav-link');
-const sectionIds = ['findings','analysis','data','cases','perspectives','scenarios','calculator','glossary','sources'];
-window.addEventListener('scroll', () => {
-  const y = window.scrollY + 130;
-  let cur = '';
-  sectionIds.forEach(id => { const el = document.getElementById(id); if (el && el.offsetTop <= y) cur = id; });
-  navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#'+cur));
-}, {passive:true});
-
-/* GLOSSARY TOGGLE */
-function toggleGl(trigger) {
-  const def = trigger.nextElementSibling;
-  trigger.classList.toggle('open');
-  def.classList.toggle('open');
+// Initial call to cache offsets
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', window.refreshOffsets);
+} else {
+  window.refreshOffsets();
 }
+window.addEventListener('resize', window.refreshOffsets, { passive: true });
+window.addEventListener('load', window.refreshOffsets, { passive: true });
 
 /* FOOTNOTE SCROLL — Safari-safe */
 function scrollToFn(n) {
@@ -3797,24 +3839,6 @@ function shareURL() {
 }
 window.shareURL = shareURL;
 
-/* ── READING PROGRESS ─────────────────────────────────────── */
-(function() {
-  var navProg = document.getElementById('nav-progress');
-  if (!navProg) return;
-  var ticking = false;
-  window.addEventListener('scroll', function() {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(function() {
-      var scrolled = window.scrollY;
-      var total    = document.body.scrollHeight - window.innerHeight;
-      var pct      = total > 0 ? Math.round((scrolled / total) * 100) : 0;
-      navProg.textContent = pct + '% read';
-      ticking = false;
-    });
-  }, { passive: true });
-})();
-
 /* ── GLOSSARY SMOOTH EXPAND ───────────────────────────────── */
 window.toggleGl = function(el) {
   var def      = el.nextElementSibling;
@@ -3831,6 +3855,8 @@ window.toggleGl = function(el) {
     el.setAttribute('aria-expanded', 'true');
     if (arrow) arrow.style.transform = 'rotate(90deg)';
   }
+  // Refresh layout cache after animation
+  setTimeout(() => { if (window.refreshOffsets) window.refreshOffsets(); }, 350);
 };
 
 /* ── MAP PULSE ON HOVER ───────────────────────────────────── */
@@ -3866,6 +3892,7 @@ window.initConflictMap = function() {
 var _origShowScenario = window.showScenario;
 window.showScenario = function(name) {
   if (_origShowScenario) _origShowScenario(name);
+  if (window.refreshOffsets) setTimeout(window.refreshOffsets, 50);
   document.querySelectorAll('.sc-btn').forEach(function(btn) {
     btn.setAttribute('aria-pressed', 'false');
     btn.classList.remove('s-active');
