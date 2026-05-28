@@ -3080,22 +3080,14 @@ window.switchView = function switchView(v) {
   document.getElementById('tab-research').classList.toggle('sw-active', isRes);
   window.scrollTo(0, 0);
   if (isRes && !window._resInited) { window._resInited = true; initResearch(); }
+  if (window.refreshOffsets) window.refreshOffsets();
 };
 
 /* ─── SIMPLE SCRIPTS (isolated scope) ──────────────────────── */
 (function() {
 
-/* PROGRESS BAR */
+/* PROGRESS BAR (moved to unified scroll handler) */
 var prog = document.getElementById('prog');
-var raf = false;
-window.addEventListener('scroll', function() {
-  if (raf) return; raf = true;
-  requestAnimationFrame(function() {
-    var s = window.scrollY, t = document.body.scrollHeight - window.innerHeight;
-    prog.style.width = Math.min((s/t)*100, 100) + '%';
-    raf = false;
-  });
-}, {passive: true});
 
 /* SCROLL REVEAL */
 var obs = new IntersectionObserver(function(entries) {
@@ -3304,36 +3296,12 @@ dmBtn.addEventListener('click', () => {
   refreshAllCharts();
 });
 
-/* PROGRESS */
+/* PROGRESS & NAV (moved to unified scroll handler) */
 const progressBar = document.getElementById('progress-bar');
 const scrollTopBtn = document.getElementById('scrollTop');
-let rafP = false;
-window.addEventListener('scroll', () => {
-  if (rafP) return; rafP = true;
-  requestAnimationFrame(() => {
-    const s = window.scrollY, t = document.body.scrollHeight - window.innerHeight;
-    progressBar.style.width = Math.min((s/t)*100,100)+'%';
-    scrollTopBtn.classList.toggle('show', s > 400);
-    rafP = false;
-  });
-}, {passive:true});
-
-/* NAV ACTIVE */
 const navLinks = document.querySelectorAll('.nav-link');
-const sectionIds = ['findings','analysis','data','cases','perspectives','scenarios','calculator','glossary','sources'];
-window.addEventListener('scroll', () => {
-  const y = window.scrollY + 130;
-  let cur = '';
-  sectionIds.forEach(id => { const el = document.getElementById(id); if (el && el.offsetTop <= y) cur = id; });
-  navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#'+cur));
-}, {passive:true});
 
-/* GLOSSARY TOGGLE */
-function toggleGl(trigger) {
-  const def = trigger.nextElementSibling;
-  trigger.classList.toggle('open');
-  def.classList.toggle('open');
-}
+/* GLOSSARY TOGGLE (moved to global window.toggleGl) */
 
 /* FOOTNOTE SCROLL — Safari-safe */
 function scrollToFn(n) {
@@ -3797,22 +3765,77 @@ function shareURL() {
 }
 window.shareURL = shareURL;
 
-/* ── READING PROGRESS ─────────────────────────────────────── */
+/* ── UNIFIED SCROLL HANDLER ────────────────────────────────── */
 (function() {
-  var navProg = document.getElementById('nav-progress');
-  if (!navProg) return;
-  var ticking = false;
-  window.addEventListener('scroll', function() {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(function() {
-      var scrolled = window.scrollY;
-      var total    = document.body.scrollHeight - window.innerHeight;
-      var pct      = total > 0 ? Math.round((scrolled / total) * 100) : 0;
-      navProg.textContent = pct + '% read';
-      ticking = false;
+  var rafPending = false;
+  var navProg    = document.getElementById('nav-progress');
+  var simpleBar  = document.getElementById('prog');
+  var resBar     = document.getElementById('progress-bar');
+  var scrollBtn  = document.getElementById('scrollTop');
+  var navLinks   = document.querySelectorAll('.nav-link');
+  var sectionIds = ['findings','analysis','data','cases','perspectives','scenarios','calculator','glossary','sources'];
+
+  // Cache for layout-triggering properties
+  var sectionOffsets = {};
+  var maxScroll      = 1;
+
+  window.refreshOffsets = function() {
+    maxScroll = Math.max(1, document.body.scrollHeight - window.innerHeight);
+    sectionIds.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) sectionOffsets[id] = el.offsetTop;
     });
-  }, { passive: true });
+  };
+
+  function onScroll() {
+    if (rafPending) return;
+    rafPending = true;
+
+    requestAnimationFrame(function() {
+      var y = Math.max(0, window.scrollY);
+      var pct = Math.min((y / maxScroll) * 100, 100);
+      var pctRound = Math.round(pct);
+
+      // 1. Reading Progress Text
+      if (navProg) navProg.textContent = pctRound + '% read';
+
+      // 2. Simple View Progress Bar
+      if (simpleBar) simpleBar.style.width = pct + '%';
+
+      // 3. Research View Progress Bar
+      if (resBar) resBar.style.width = pct + '%';
+
+      // 4. Scroll-to-top Button
+      if (scrollBtn) {
+        if (y > 400) scrollBtn.classList.add('show');
+        else scrollBtn.classList.remove('show');
+      }
+
+      // 5. Navigation Highlighting (Research View)
+      if (document.body.classList.contains('show-research')) {
+        var threshold = y + 130;
+        var cur = '';
+        for (var i = 0; i < sectionIds.length; i++) {
+          var id = sectionIds[i];
+          if (typeof sectionOffsets[id] !== 'undefined' && sectionOffsets[id] <= threshold) {
+            cur = id;
+          }
+        }
+        navLinks.forEach(function(l) {
+          l.classList.toggle('active', l.getAttribute('href') === '#' + cur);
+        });
+      }
+
+      rafPending = false;
+    });
+  }
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', window.refreshOffsets);
+  window.addEventListener('load',   window.refreshOffsets);
+
+  // Initial call
+  window.refreshOffsets();
 })();
 
 /* ── GLOSSARY SMOOTH EXPAND ───────────────────────────────── */
@@ -3831,6 +3854,8 @@ window.toggleGl = function(el) {
     el.setAttribute('aria-expanded', 'true');
     if (arrow) arrow.style.transform = 'rotate(90deg)';
   }
+  // Refresh offsets after layout change (wait for transition)
+  if (window.refreshOffsets) setTimeout(window.refreshOffsets, 50);
 };
 
 /* ── MAP PULSE ON HOVER ───────────────────────────────────── */
