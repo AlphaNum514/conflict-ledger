@@ -1,0 +1,3 @@
+## 2026-03-24 - [Layout Thrashing in Scroll Spies]
+**Learning:** Multiple scroll listeners querying `offsetTop` and `scrollHeight` simultaneously cause "Forced Synchronous Layout" (layout thrashing), significantly degrading scroll performance in single-file vanilla JS apps.
+**Action:** Consolidate scroll-driven UI updates into a single `requestAnimationFrame` throttled handler and cache layout properties (`offsetTop`, `maxScroll`) globally. Ensure the cache is invalidated and refreshed on view switches, window resizes, and any DOM-expanding transitions (e.g., accordions) using a delay to account for CSS transitions.
