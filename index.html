@@ -3080,22 +3080,83 @@ window.switchView = function switchView(v) {
   document.getElementById('tab-research').classList.toggle('sw-active', isRes);
   window.scrollTo(0, 0);
   if (isRes && !window._resInited) { window._resInited = true; initResearch(); }
+  if (window.refreshOffsets) window.refreshOffsets();
 };
+
+/* ─── UNIFIED SCROLL HANDLER ─────────────────────────── */
+(function() {
+  var sectionIds = ['findings', 'analysis', 'data', 'map', 'cases', 'perspectives', 'scenarios', 'calculator', 'glossary', 'sources'];
+  var sectionOffsets = {};
+  var navLinkMap = {};
+  var maxScroll = 1;
+  var rafPending = false;
+
+  // Cache elements
+  var progSimple = document.getElementById('prog');
+  var progRes = document.getElementById('progress-bar');
+  var progText = document.getElementById('nav-progress');
+  var scrollTopBtn = document.getElementById('scrollTop');
+
+  window.refreshOffsets = function() {
+    sectionIds.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) {
+        sectionOffsets[id] = el.offsetTop;
+        if (!navLinkMap[id]) {
+          navLinkMap[id] = document.querySelector('.nav-link[href="#' + id + '"]');
+        }
+      }
+    });
+    maxScroll = Math.max(1, document.body.scrollHeight - window.innerHeight);
+  };
+
+  window.addEventListener('scroll', function() {
+    if (rafPending) return;
+    rafPending = true;
+
+    requestAnimationFrame(function() {
+      var y = Math.max(0, window.scrollY);
+      var isResearch = document.body.classList.contains('show-research');
+      var pct = Math.min((y / maxScroll) * 100, 100);
+
+      // 1. Update Progress Bars
+      if (isResearch) {
+        if (progRes) progRes.style.width = pct + '%';
+        if (progText) progText.textContent = Math.round(pct) + '% read';
+        if (scrollTopBtn) scrollTopBtn.classList.toggle('show', y > 400);
+
+        // 2. Navigation Highlighting (Scroll Spy)
+        var cur = '';
+        var threshold = y + 130;
+        for (var i = 0; i < sectionIds.length; i++) {
+          var id = sectionIds[i];
+          if (typeof sectionOffsets[id] !== 'undefined' && sectionOffsets[id] <= threshold) {
+            cur = id;
+          }
+        }
+        for (var sid in navLinkMap) {
+          if (navLinkMap[sid]) {
+            navLinkMap[sid].classList.toggle('active', sid === cur);
+          }
+        }
+      } else {
+        if (progSimple) progSimple.style.width = pct + '%';
+      }
+
+      rafPending = false;
+    });
+  }, { passive: true });
+
+  window.addEventListener('resize', window.refreshOffsets);
+  window.addEventListener('load', window.refreshOffsets);
+  // Initial call
+  window.refreshOffsets();
+})();
 
 /* ─── SIMPLE SCRIPTS (isolated scope) ──────────────────────── */
 (function() {
 
-/* PROGRESS BAR */
-var prog = document.getElementById('prog');
-var raf = false;
-window.addEventListener('scroll', function() {
-  if (raf) return; raf = true;
-  requestAnimationFrame(function() {
-    var s = window.scrollY, t = document.body.scrollHeight - window.innerHeight;
-    prog.style.width = Math.min((s/t)*100, 100) + '%';
-    raf = false;
-  });
-}, {passive: true});
+/* PROGRESS BAR REMOVED — Handled by Unified Scroll Handler */
 
 /* SCROLL REVEAL */
 var obs = new IntersectionObserver(function(entries) {
@@ -3251,6 +3312,9 @@ function showScenario(name) {
   document.querySelector('.sc-btn.' + name).classList.add('s-active');
 
   document.getElementById('sc-output').classList.add('s-show');
+
+  // Refresh layout cache after content expansion
+  setTimeout(function() { if (window.refreshOffsets) window.refreshOffsets(); }, 350);
 }
 
 
@@ -3304,35 +3368,19 @@ dmBtn.addEventListener('click', () => {
   refreshAllCharts();
 });
 
-/* PROGRESS */
-const progressBar = document.getElementById('progress-bar');
-const scrollTopBtn = document.getElementById('scrollTop');
-let rafP = false;
-window.addEventListener('scroll', () => {
-  if (rafP) return; rafP = true;
-  requestAnimationFrame(() => {
-    const s = window.scrollY, t = document.body.scrollHeight - window.innerHeight;
-    progressBar.style.width = Math.min((s/t)*100,100)+'%';
-    scrollTopBtn.classList.toggle('show', s > 400);
-    rafP = false;
-  });
-}, {passive:true});
-
-/* NAV ACTIVE */
-const navLinks = document.querySelectorAll('.nav-link');
-const sectionIds = ['findings','analysis','data','cases','perspectives','scenarios','calculator','glossary','sources'];
-window.addEventListener('scroll', () => {
-  const y = window.scrollY + 130;
-  let cur = '';
-  sectionIds.forEach(id => { const el = document.getElementById(id); if (el && el.offsetTop <= y) cur = id; });
-  navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#'+cur));
-}, {passive:true});
+/* PROGRESS & NAV ACTIVE REMOVED — Handled by Unified Scroll Handler */
 
 /* GLOSSARY TOGGLE */
 function toggleGl(trigger) {
   const def = trigger.nextElementSibling;
   trigger.classList.toggle('open');
   def.classList.toggle('open');
+  // Delegate to global if available, otherwise refresh
+  if (window.toggleGl && window.toggleGl !== toggleGl) {
+    window.toggleGl(trigger);
+  } else {
+    setTimeout(function() { if (window.refreshOffsets) window.refreshOffsets(); }, 350);
+  }
 }
 
 /* FOOTNOTE SCROLL — Safari-safe */
@@ -3797,23 +3845,7 @@ function shareURL() {
 }
 window.shareURL = shareURL;
 
-/* ── READING PROGRESS ─────────────────────────────────────── */
-(function() {
-  var navProg = document.getElementById('nav-progress');
-  if (!navProg) return;
-  var ticking = false;
-  window.addEventListener('scroll', function() {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(function() {
-      var scrolled = window.scrollY;
-      var total    = document.body.scrollHeight - window.innerHeight;
-      var pct      = total > 0 ? Math.round((scrolled / total) * 100) : 0;
-      navProg.textContent = pct + '% read';
-      ticking = false;
-    });
-  }, { passive: true });
-})();
+/* READING PROGRESS REMOVED — Handled by Unified Scroll Handler */
 
 /* ── GLOSSARY SMOOTH EXPAND ───────────────────────────────── */
 window.toggleGl = function(el) {
@@ -3831,6 +3863,7 @@ window.toggleGl = function(el) {
     el.setAttribute('aria-expanded', 'true');
     if (arrow) arrow.style.transform = 'rotate(90deg)';
   }
+  setTimeout(function() { if (window.refreshOffsets) window.refreshOffsets(); }, 350);
 };
 
 /* ── MAP PULSE ON HOVER ───────────────────────────────────── */
