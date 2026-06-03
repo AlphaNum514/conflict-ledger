@@ -1,0 +1,3 @@
+## 2025-05-15 - [Layout Thrashing in Scroll Handlers]
+**Learning:** Frequent DOM reads (like `.offsetTop`) inside unthrottled scroll listeners cause "layout thrashing," where the browser is forced to recalculate the page layout multiple times per frame. This is especially severe when multiple independent listeners are attached to the same scroll event.
+**Action:** Consolidate scroll-dependent logic into a single throttled (`requestAnimationFrame`) handler and cache layout-triggering values. Refresh the cache only on events that actually change the layout (resize, view toggle, content expansion).
