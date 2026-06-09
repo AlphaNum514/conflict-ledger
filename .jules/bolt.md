@@ -1,0 +1,3 @@
+## 2026-06-09 - [Consolidated Scroll Handlers & Layout Caching]
+**Learning:** Multiple independent scroll listeners and repeated access to `offsetTop` during scroll events causes layout thrashing and high main thread utilization, especially in a large single-file HTML document. Consolidation into a single throttled `requestAnimationFrame` handler with cached layout values significantly improves scroll performance.
+**Action:** Always prefer a unified scroll handler and cache any layout-triggering properties (like `offsetTop` or `getBoundingClientRect`) outside of high-frequency event listeners. Recalculate these caches only on window resize or when the DOM structure changes.
