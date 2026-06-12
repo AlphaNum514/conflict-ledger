@@ -3072,6 +3072,62 @@ body.show-research .nav-progress { display: block; }
 <script>
 /* ─── GLOBAL: VIEW SWITCHER ────────────────────────────────── */
 /* Explicitly expose switchView globally */
+/* ─── UNIFIED SCROLL HANDLER (PERFORMANCE OPTIMIZED) ───────── */
+(function() {
+  var prog = document.getElementById('prog');
+  var progressBar = document.getElementById('progress-bar');
+  var scrollTopBtn = document.getElementById('scrollTop');
+  var navProg = document.getElementById('nav-progress');
+  var navLinks = document.querySelectorAll('.nav-link');
+  var sectionIds = ['findings','analysis','data','cases','perspectives','scenarios','calculator','glossary','sources'];
+  var sectionOffsets = {};
+  var maxScroll = 1;
+  var rafPending = false;
+
+  window.refreshOffsets = function() {
+    maxScroll = Math.max(1, document.body.scrollHeight - window.innerHeight);
+    sectionIds.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) sectionOffsets[id] = el.offsetTop;
+    });
+  };
+
+  function updateScroll() {
+    var s = Math.max(0, window.scrollY);
+    var pct = Math.min((s / maxScroll) * 100, 100);
+    var isResearch = document.body.classList.contains('show-research');
+
+    if (!isResearch && prog) {
+      prog.style.width = pct + '%';
+    } else if (isResearch) {
+      if (progressBar) progressBar.style.width = pct + '%';
+      if (scrollTopBtn) scrollTopBtn.classList.toggle('show', s > 400);
+      if (navProg) navProg.textContent = Math.round(pct) + '% read';
+
+      var y = s + 130;
+      var cur = '';
+      sectionIds.forEach(function(id) {
+        if (typeof sectionOffsets[id] !== 'undefined' && sectionOffsets[id] <= y) cur = id;
+      });
+      navLinks.forEach(function(l) {
+        l.classList.toggle('active', l.getAttribute('href') === '#' + cur);
+      });
+    }
+    rafPending = false;
+  }
+
+  window.addEventListener('scroll', function() {
+    if (rafPending) return;
+    rafPending = true;
+    requestAnimationFrame(updateScroll);
+  }, { passive: true });
+
+  window.addEventListener('resize', window.refreshOffsets);
+  window.addEventListener('load', window.refreshOffsets);
+  document.addEventListener('DOMContentLoaded', window.refreshOffsets);
+  window.refreshOffsets();
+})();
+
 window.switchView = function switchView(v) {
   try { localStorage.setItem('cl-view', v); } catch(e) {}
   var isRes = v === 'research';
@@ -3080,22 +3136,11 @@ window.switchView = function switchView(v) {
   document.getElementById('tab-research').classList.toggle('sw-active', isRes);
   window.scrollTo(0, 0);
   if (isRes && !window._resInited) { window._resInited = true; initResearch(); }
+  window.refreshOffsets();
 };
 
 /* ─── SIMPLE SCRIPTS (isolated scope) ──────────────────────── */
 (function() {
-
-/* PROGRESS BAR */
-var prog = document.getElementById('prog');
-var raf = false;
-window.addEventListener('scroll', function() {
-  if (raf) return; raf = true;
-  requestAnimationFrame(function() {
-    var s = window.scrollY, t = document.body.scrollHeight - window.innerHeight;
-    prog.style.width = Math.min((s/t)*100, 100) + '%';
-    raf = false;
-  });
-}, {passive: true});
 
 /* SCROLL REVEAL */
 var obs = new IntersectionObserver(function(entries) {
@@ -3304,35 +3349,15 @@ dmBtn.addEventListener('click', () => {
   refreshAllCharts();
 });
 
-/* PROGRESS */
-const progressBar = document.getElementById('progress-bar');
-const scrollTopBtn = document.getElementById('scrollTop');
-let rafP = false;
-window.addEventListener('scroll', () => {
-  if (rafP) return; rafP = true;
-  requestAnimationFrame(() => {
-    const s = window.scrollY, t = document.body.scrollHeight - window.innerHeight;
-    progressBar.style.width = Math.min((s/t)*100,100)+'%';
-    scrollTopBtn.classList.toggle('show', s > 400);
-    rafP = false;
-  });
-}, {passive:true});
-
-/* NAV ACTIVE */
-const navLinks = document.querySelectorAll('.nav-link');
-const sectionIds = ['findings','analysis','data','cases','perspectives','scenarios','calculator','glossary','sources'];
-window.addEventListener('scroll', () => {
-  const y = window.scrollY + 130;
-  let cur = '';
-  sectionIds.forEach(id => { const el = document.getElementById(id); if (el && el.offsetTop <= y) cur = id; });
-  navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#'+cur));
-}, {passive:true});
 
 /* GLOSSARY TOGGLE */
 function toggleGl(trigger) {
   const def = trigger.nextElementSibling;
   trigger.classList.toggle('open');
   def.classList.toggle('open');
+  if (window.toggleGl && window.toggleGl !== toggleGl) {
+    window.toggleGl(trigger);
+  }
 }
 
 /* FOOTNOTE SCROLL — Safari-safe */
@@ -3752,7 +3777,11 @@ function setMapLayer(layer) {
 var mapInitObs = new IntersectionObserver(function(entries) {
   entries.forEach(function(e) {
     if (e.isIntersecting) {
-      setTimeout(initConflictMap, 100);
+      setTimeout(function() {
+        initConflictMap();
+        upgradeMapMarkers();
+        setTimeout(function() { if (window.refreshOffsets) window.refreshOffsets(); }, 500);
+      }, 100);
       mapInitObs.unobserve(e.target);
     }
   });
@@ -3797,23 +3826,6 @@ function shareURL() {
 }
 window.shareURL = shareURL;
 
-/* ── READING PROGRESS ─────────────────────────────────────── */
-(function() {
-  var navProg = document.getElementById('nav-progress');
-  if (!navProg) return;
-  var ticking = false;
-  window.addEventListener('scroll', function() {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(function() {
-      var scrolled = window.scrollY;
-      var total    = document.body.scrollHeight - window.innerHeight;
-      var pct      = total > 0 ? Math.round((scrolled / total) * 100) : 0;
-      navProg.textContent = pct + '% read';
-      ticking = false;
-    });
-  }, { passive: true });
-})();
 
 /* ── GLOSSARY SMOOTH EXPAND ───────────────────────────────── */
 window.toggleGl = function(el) {
@@ -3831,6 +3843,8 @@ window.toggleGl = function(el) {
     el.setAttribute('aria-expanded', 'true');
     if (arrow) arrow.style.transform = 'rotate(90deg)';
   }
+  // Allow time for CSS transition before refreshing offsets
+  setTimeout(function() { if (window.refreshOffsets) window.refreshOffsets(); }, 350);
 };
 
 /* ── MAP PULSE ON HOVER ───────────────────────────────────── */
@@ -3875,6 +3889,7 @@ window.showScenario = function(name) {
     activeBtn.setAttribute('aria-pressed', 'true');
     activeBtn.classList.add('s-active');
   }
+  if (window.refreshOffsets) window.refreshOffsets();
 };
 
 /* ── SECTOR TABLE — add inline color bars dynamically ─────── */
