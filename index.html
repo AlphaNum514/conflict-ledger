@@ -3072,6 +3072,93 @@ body.show-research .nav-progress { display: block; }
 <script>
 /* ─── GLOBAL: VIEW SWITCHER ────────────────────────────────── */
 /* Explicitly expose switchView globally */
+
+/* ─── UNIFIED SCROLL & LAYOUT CACHE ─────────────────────────── */
+(function() {
+  var rafPending = false;
+  var sectionIds = ['findings','analysis','data','cases','perspectives','scenarios','calculator','glossary','sources'];
+  var sectionOffsets = {};
+  var maxScroll = 1;
+  var lastActiveId = '';
+
+  // Cache DOM elements
+  var progSimple = document.getElementById('prog');
+  var progResearch = document.getElementById('progress-bar');
+  var navProgress = document.getElementById('nav-progress');
+  var scrollTopBtn = document.getElementById('scrollTop');
+  var navLinks = document.querySelectorAll('.nav-link');
+  var navLinkMap = {};
+
+  navLinks.forEach(function(link) {
+    var href = link.getAttribute('href');
+    if (href && href.indexOf('#') === 0) {
+      var id = href.substring(1);
+      if (!navLinkMap[id]) navLinkMap[id] = [];
+      navLinkMap[id].push(link);
+    }
+  });
+
+  window.refreshOffsets = function() {
+    sectionIds.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) sectionOffsets[id] = el.offsetTop;
+    });
+    maxScroll = Math.max(1, document.body.scrollHeight - window.innerHeight);
+  };
+
+  function updateScroll() {
+    var y = Math.max(0, window.scrollY);
+    var isResearch = document.body.classList.contains('show-research');
+
+    // Update Progress Bars
+    var pct = Math.min((y / maxScroll) * 100, 100);
+
+    if (isResearch) {
+      if (progResearch) progResearch.style.width = pct + '%';
+      if (navProgress) navProgress.textContent = Math.round(pct) + '% read';
+      if (scrollTopBtn) scrollTopBtn.classList.toggle('show', y > 400);
+
+      // Nav highlighting
+      var cur = '';
+      var threshold = y + 130;
+      for (var i = 0; i < sectionIds.length; i++) {
+        var id = sectionIds[i];
+        if (typeof sectionOffsets[id] !== 'undefined' && sectionOffsets[id] <= threshold) {
+          cur = id;
+        }
+      }
+
+      if (cur !== lastActiveId) {
+        if (lastActiveId && navLinkMap[lastActiveId]) {
+          navLinkMap[lastActiveId].forEach(function(el) { el.classList.remove('active'); });
+        }
+        if (cur && navLinkMap[cur]) {
+          navLinkMap[cur].forEach(function(el) { el.classList.add('active'); });
+        }
+        lastActiveId = cur;
+      }
+    } else {
+      if (progSimple) progSimple.style.width = pct + '%';
+    }
+
+    rafPending = false;
+  }
+
+  window.addEventListener('scroll', function() {
+    if (!rafPending) {
+      rafPending = true;
+      requestAnimationFrame(updateScroll);
+    }
+  }, { passive: true });
+
+  // Refresh on layout changes
+  window.addEventListener('resize', window.refreshOffsets);
+  window.addEventListener('load', window.refreshOffsets);
+
+  // Initial call
+  setTimeout(window.refreshOffsets, 100);
+})();
+
 window.switchView = function switchView(v) {
   try { localStorage.setItem('cl-view', v); } catch(e) {}
   var isRes = v === 'research';
@@ -3080,22 +3167,13 @@ window.switchView = function switchView(v) {
   document.getElementById('tab-research').classList.toggle('sw-active', isRes);
   window.scrollTo(0, 0);
   if (isRes && !window._resInited) { window._resInited = true; initResearch(); }
+  if (window.refreshOffsets) window.refreshOffsets();
 };
 
 /* ─── SIMPLE SCRIPTS (isolated scope) ──────────────────────── */
 (function() {
 
-/* PROGRESS BAR */
-var prog = document.getElementById('prog');
-var raf = false;
-window.addEventListener('scroll', function() {
-  if (raf) return; raf = true;
-  requestAnimationFrame(function() {
-    var s = window.scrollY, t = document.body.scrollHeight - window.innerHeight;
-    prog.style.width = Math.min((s/t)*100, 100) + '%';
-    raf = false;
-  });
-}, {passive: true});
+/* PROGRESS BAR (now handled by unified scroll handler) */
 
 /* SCROLL REVEAL */
 var obs = new IntersectionObserver(function(entries) {
@@ -3198,6 +3276,11 @@ var chartObs = new IntersectionObserver(function(entries) {
 document.querySelectorAll('#sectorChartSimple').forEach(function(el) { chartObs.observe(el); });
 
 /* SCENARIO SWITCHER */
+var _origShowScenarioSimple = window.showScenario;
+window.showScenario = function(name) {
+  if (_origShowScenarioSimple) _origShowScenarioSimple(name);
+  if (window.refreshOffsets) window.refreshOffsets();
+};
 var SCENARIOS = {
   bull: {
     title:   'Scenario: Escalation',
@@ -3304,35 +3387,19 @@ dmBtn.addEventListener('click', () => {
   refreshAllCharts();
 });
 
-/* PROGRESS */
-const progressBar = document.getElementById('progress-bar');
-const scrollTopBtn = document.getElementById('scrollTop');
-let rafP = false;
-window.addEventListener('scroll', () => {
-  if (rafP) return; rafP = true;
-  requestAnimationFrame(() => {
-    const s = window.scrollY, t = document.body.scrollHeight - window.innerHeight;
-    progressBar.style.width = Math.min((s/t)*100,100)+'%';
-    scrollTopBtn.classList.toggle('show', s > 400);
-    rafP = false;
-  });
-}, {passive:true});
+/* PROGRESS (now handled by unified scroll handler) */
 
-/* NAV ACTIVE */
-const navLinks = document.querySelectorAll('.nav-link');
-const sectionIds = ['findings','analysis','data','cases','perspectives','scenarios','calculator','glossary','sources'];
-window.addEventListener('scroll', () => {
-  const y = window.scrollY + 130;
-  let cur = '';
-  sectionIds.forEach(id => { const el = document.getElementById(id); if (el && el.offsetTop <= y) cur = id; });
-  navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#'+cur));
-}, {passive:true});
+/* NAV ACTIVE (now handled by unified scroll handler) */
 
 /* GLOSSARY TOGGLE */
 function toggleGl(trigger) {
-  const def = trigger.nextElementSibling;
-  trigger.classList.toggle('open');
-  def.classList.toggle('open');
+  if (window.toggleGl && window.toggleGl !== toggleGl) {
+    window.toggleGl(trigger);
+  } else {
+    const def = trigger.nextElementSibling;
+    trigger.classList.toggle('open');
+    def.classList.toggle('open');
+  }
 }
 
 /* FOOTNOTE SCROLL — Safari-safe */
@@ -3554,6 +3621,7 @@ function applyPreset(name) {
   document.getElementById('sl-intensity').value  = p.intensity;
   document.getElementById('sl-oil').value        = p.oil;
   calcUpdate();
+  if (window.refreshOffsets) window.refreshOffsets();
 }
 
 function calcUpdate() {
@@ -3797,23 +3865,7 @@ function shareURL() {
 }
 window.shareURL = shareURL;
 
-/* ── READING PROGRESS ─────────────────────────────────────── */
-(function() {
-  var navProg = document.getElementById('nav-progress');
-  if (!navProg) return;
-  var ticking = false;
-  window.addEventListener('scroll', function() {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(function() {
-      var scrolled = window.scrollY;
-      var total    = document.body.scrollHeight - window.innerHeight;
-      var pct      = total > 0 ? Math.round((scrolled / total) * 100) : 0;
-      navProg.textContent = pct + '% read';
-      ticking = false;
-    });
-  }, { passive: true });
-})();
+/* ── READING PROGRESS (now handled by unified scroll handler) ── */
 
 /* ── GLOSSARY SMOOTH EXPAND ───────────────────────────────── */
 window.toggleGl = function(el) {
@@ -3831,6 +3883,8 @@ window.toggleGl = function(el) {
     el.setAttribute('aria-expanded', 'true');
     if (arrow) arrow.style.transform = 'rotate(90deg)';
   }
+  // Layout changed, refresh offsets after transition
+  if (window.refreshOffsets) setTimeout(window.refreshOffsets, 350);
 };
 
 /* ── MAP PULSE ON HOVER ───────────────────────────────────── */
@@ -3859,7 +3913,10 @@ function upgradeMapMarkers() {
 var _origInit = window.initConflictMap;
 window.initConflictMap = function() {
   if (_origInit) _origInit();
-  setTimeout(upgradeMapMarkers, 500);
+  setTimeout(function() {
+    upgradeMapMarkers();
+    if (window.refreshOffsets) window.refreshOffsets();
+  }, 500);
 };
 
 /* ── SCENARIO BUTTONS — fix aria-pressed ─────────────────── */
