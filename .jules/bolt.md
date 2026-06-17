@@ -1,0 +1,3 @@
+## 2026-06-17 - Unified Scroll Handler & Layout Caching
+**Learning:** Consolidating multiple unthrottled scroll listeners into a single `requestAnimationFrame`-throttled handler significantly reduces main-thread work. Caching `offsetTop` values for navigation sections eliminates layout thrashing during scroll events, as the browser no longer needs to recalculate the layout on every frame to satisfy `el.offsetTop` queries.
+**Action:** Always check for redundant scroll/resize listeners in large single-page applications. Use a unified event hub with layout caching to maintain 60fps performance during high-frequency user interactions.
