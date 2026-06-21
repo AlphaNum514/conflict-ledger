@@ -1,0 +1,3 @@
+## 2025-06-21 - Unified Scroll Handler & Layout Caching
+**Learning:** Multiple unthrottled scroll listeners and repeated `offsetTop` lookups (layout thrashing) are major performance bottlenecks in single-page applications with heavy scroll interaction. Consolidating these into a single throttled handler with cached layout values significantly reduces CPU overhead and improves scroll smoothness.
+**Action:** Always prefer a single unified scroll listener using `requestAnimationFrame` and cache layout-triggering properties like `offsetTop` and `scrollHeight`. Recalculate these caches only on layout-changing events (resize, view switches, dynamic content expansion).
