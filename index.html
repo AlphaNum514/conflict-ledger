@@ -3080,22 +3080,93 @@ window.switchView = function switchView(v) {
   document.getElementById('tab-research').classList.toggle('sw-active', isRes);
   window.scrollTo(0, 0);
   if (isRes && !window._resInited) { window._resInited = true; initResearch(); }
+  if (window.refreshOffsets) window.refreshOffsets();
 };
+
+/* ─── UNIFIED SCROLL HANDLER ───────────────────────────────── */
+(function() {
+  var rafPending = false;
+  var sectionIds = ['findings','analysis','data','cases','perspectives','scenarios','calculator','glossary','sources'];
+  var sectionOffsets = {};
+  var maxScroll = 1;
+  var lastActiveId = '';
+
+  // Cache DOM elements
+  var progBarSimple, progBarRes, scrollTopBtn, navProg, navLinks = [];
+
+  function initElements() {
+    progBarSimple = document.getElementById('prog');
+    progBarRes    = document.getElementById('progress-bar');
+    scrollTopBtn  = document.getElementById('scrollTop');
+    navProg       = document.getElementById('nav-progress');
+    navLinks      = document.querySelectorAll('.nav-link');
+  }
+
+  window.refreshOffsets = function() {
+    maxScroll = Math.max(1, document.body.scrollHeight - window.innerHeight);
+    sectionIds.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) sectionOffsets[id] = el.offsetTop;
+    });
+  };
+
+  function updateScroll() {
+    var isRes = document.body.classList.contains('show-research');
+    var y = Math.max(0, window.scrollY);
+    var pct = Math.min((y / maxScroll) * 100, 100);
+
+    // 1. Simple view progress bar
+    if (!isRes && progBarSimple) {
+      progBarSimple.style.width = pct + '%';
+    }
+
+    // 2. Research view components
+    if (isRes) {
+      if (progBarRes) progBarRes.style.width = pct + '%';
+      if (scrollTopBtn) scrollTopBtn.classList.toggle('show', y > 400);
+      if (navProg) navProg.textContent = Math.round(pct) + '% read';
+
+      // Navigation highlight
+      var curId = '';
+      var threshold = y + 130;
+      for (var i = 0; i < sectionIds.length; i++) {
+        var id = sectionIds[i];
+        if (typeof sectionOffsets[id] !== 'undefined' && sectionOffsets[id] <= threshold) {
+          curId = id;
+        }
+      }
+      if (curId !== lastActiveId) {
+        lastActiveId = curId;
+        for (var j = 0; j < navLinks.length; j++) {
+          var l = navLinks[j];
+          l.classList.toggle('active', l.getAttribute('href') === '#' + curId);
+        }
+      }
+    }
+    rafPending = false;
+  }
+
+  function onScroll() {
+    if (!rafPending) {
+      rafPending = true;
+      requestAnimationFrame(updateScroll);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    initElements();
+    window.refreshOffsets();
+    onScroll(); // Initial position
+  });
+
+  window.addEventListener('load', window.refreshOffsets);
+  window.addEventListener('resize', window.refreshOffsets);
+  window.addEventListener('scroll', onScroll, { passive: true });
+})();
 
 /* ─── SIMPLE SCRIPTS (isolated scope) ──────────────────────── */
 (function() {
 
-/* PROGRESS BAR */
-var prog = document.getElementById('prog');
-var raf = false;
-window.addEventListener('scroll', function() {
-  if (raf) return; raf = true;
-  requestAnimationFrame(function() {
-    var s = window.scrollY, t = document.body.scrollHeight - window.innerHeight;
-    prog.style.width = Math.min((s/t)*100, 100) + '%';
-    raf = false;
-  });
-}, {passive: true});
 
 /* SCROLL REVEAL */
 var obs = new IntersectionObserver(function(entries) {
@@ -3305,34 +3376,17 @@ dmBtn.addEventListener('click', () => {
 });
 
 /* PROGRESS */
-const progressBar = document.getElementById('progress-bar');
-const scrollTopBtn = document.getElementById('scrollTop');
-let rafP = false;
-window.addEventListener('scroll', () => {
-  if (rafP) return; rafP = true;
-  requestAnimationFrame(() => {
-    const s = window.scrollY, t = document.body.scrollHeight - window.innerHeight;
-    progressBar.style.width = Math.min((s/t)*100,100)+'%';
-    scrollTopBtn.classList.toggle('show', s > 400);
-    rafP = false;
-  });
-}, {passive:true});
-
-/* NAV ACTIVE */
-const navLinks = document.querySelectorAll('.nav-link');
-const sectionIds = ['findings','analysis','data','cases','perspectives','scenarios','calculator','glossary','sources'];
-window.addEventListener('scroll', () => {
-  const y = window.scrollY + 130;
-  let cur = '';
-  sectionIds.forEach(id => { const el = document.getElementById(id); if (el && el.offsetTop <= y) cur = id; });
-  navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#'+cur));
-}, {passive:true});
 
 /* GLOSSARY TOGGLE */
 function toggleGl(trigger) {
   const def = trigger.nextElementSibling;
   trigger.classList.toggle('open');
   def.classList.toggle('open');
+  if (window.toggleGl && window.toggleGl !== toggleGl) {
+    window.toggleGl(trigger);
+  } else {
+    setTimeout(function() { if (window.refreshOffsets) window.refreshOffsets(); }, 350);
+  }
 }
 
 /* FOOTNOTE SCROLL — Safari-safe */
@@ -3554,6 +3608,7 @@ function applyPreset(name) {
   document.getElementById('sl-intensity').value  = p.intensity;
   document.getElementById('sl-oil').value        = p.oil;
   calcUpdate();
+  if (window.refreshOffsets) window.refreshOffsets();
 }
 
 function calcUpdate() {
@@ -3797,23 +3852,6 @@ function shareURL() {
 }
 window.shareURL = shareURL;
 
-/* ── READING PROGRESS ─────────────────────────────────────── */
-(function() {
-  var navProg = document.getElementById('nav-progress');
-  if (!navProg) return;
-  var ticking = false;
-  window.addEventListener('scroll', function() {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(function() {
-      var scrolled = window.scrollY;
-      var total    = document.body.scrollHeight - window.innerHeight;
-      var pct      = total > 0 ? Math.round((scrolled / total) * 100) : 0;
-      navProg.textContent = pct + '% read';
-      ticking = false;
-    });
-  }, { passive: true });
-})();
 
 /* ── GLOSSARY SMOOTH EXPAND ───────────────────────────────── */
 window.toggleGl = function(el) {
@@ -3831,6 +3869,7 @@ window.toggleGl = function(el) {
     el.setAttribute('aria-expanded', 'true');
     if (arrow) arrow.style.transform = 'rotate(90deg)';
   }
+  setTimeout(function() { if (window.refreshOffsets) window.refreshOffsets(); }, 350);
 };
 
 /* ── MAP PULSE ON HOVER ───────────────────────────────────── */
@@ -3875,6 +3914,7 @@ window.showScenario = function(name) {
     activeBtn.setAttribute('aria-pressed', 'true');
     activeBtn.classList.add('s-active');
   }
+  if (window.refreshOffsets) window.refreshOffsets();
 };
 
 /* ── SECTOR TABLE — add inline color bars dynamically ─────── */
