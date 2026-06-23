@@ -1,0 +1,3 @@
+## 2025-05-15 - Unified Scroll Handler and Layout Caching
+**Learning:** In a large standalone HTML file with multiple independent scroll listeners, unthrottled access to layout-triggering properties like `offsetTop` and `scrollHeight` causes significant layout thrashing. Consolidating these into a single `requestAnimationFrame` handler and caching layout values during known invalidation events (resize, content expansion, view switches) reduces main thread load during high-frequency scroll events.
+**Action:** Always audit for redundant scroll listeners and implement a unified, throttled handler with a centralized layout cache (`refreshOffsets`) when dealing with complex, scroll-heavy single-page applications.
