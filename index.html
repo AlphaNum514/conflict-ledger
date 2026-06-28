@@ -149,9 +149,10 @@ body {
 /* ── PROGRESS ── */
 #prog {
   position: fixed; top: 0; left: 0; z-index: 9999;
-  height: 3px; width: 0%; background: var(--red);
-  transition: width .08s linear;
-  -webkit-transform: translateZ(0); transform: translateZ(0);
+  height: 3px; width: 100%; background: var(--red);
+  transform-origin: left; -webkit-transform-origin: left;
+  transform: scaleX(0) translateZ(0); -webkit-transform: scaleX(0) translateZ(0);
+  transition: transform .08s linear, -webkit-transform .08s linear;
 }
 
 /* ── HEADER ── */
@@ -573,11 +574,10 @@ body {
 /* ── CONTROLS ── */
 #progress-bar {
   position: fixed; top: 0; left: 0; z-index: 10000;
-  height: 2px; width: 0%; background: var(--red);
-  transition: width .1s linear;
-  /* iOS: isolate from layout so keyboard popup doesn't shift it */
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
+  height: 2px; width: 100%; background: var(--red);
+  transform-origin: left; -webkit-transform-origin: left;
+  transform: scaleX(0) translateZ(0); -webkit-transform: scaleX(0) translateZ(0);
+  transition: transform .1s linear, -webkit-transform .1s linear;
   contain: strict;
 }
 .dm-toggle {
@@ -3079,6 +3079,8 @@ body.show-research .nav-progress { display: block; }
   var maxScroll = 1;
   var rafPending = false;
   var lastActiveId = '';
+  var lastPctRounded = -1;
+  var lastShowScrollTop = false;
 
   // Elements to update
   var progBarSimple, progBarRes, scrollTopBtn, navProgText, navLinkMap = {};
@@ -3096,19 +3098,28 @@ body.show-research .nav-progress { display: block; }
     var pct = Math.min((s / maxScroll) * 100, 100);
     var isRes = document.body.classList.contains('show-research');
 
-    // Update Progress Bars
+    // Update Progress Bars (Compositor-only via scaleX)
+    var scale = 'scaleX(' + (pct / 100).toFixed(4) + ') translateZ(0)';
     if (!progBarSimple) progBarSimple = document.getElementById('prog');
-    if (progBarSimple) progBarSimple.style.width = pct + '%';
+    if (progBarSimple) progBarSimple.style.transform = scale;
 
     if (isRes) {
       if (!progBarRes) progBarRes = document.getElementById('progress-bar');
-      if (progBarRes) progBarRes.style.width = pct + '%';
+      if (progBarRes) progBarRes.style.transform = scale;
 
-      if (!scrollTopBtn) scrollTopBtn = document.getElementById('scrollTop');
-      if (scrollTopBtn) scrollTopBtn.classList.toggle('show', s > 400);
+      var showST = s > 400;
+      if (showST !== lastShowScrollTop) {
+        if (!scrollTopBtn) scrollTopBtn = document.getElementById('scrollTop');
+        if (scrollTopBtn) scrollTopBtn.classList.toggle('show', showST);
+        lastShowScrollTop = showST;
+      }
 
-      if (!navProgText) navProgText = document.getElementById('nav-progress');
-      if (navProgText) navProgText.textContent = Math.round(pct) + '% read';
+      var roundedPct = Math.round(pct);
+      if (roundedPct !== lastPctRounded) {
+        if (!navProgText) navProgText = document.getElementById('nav-progress');
+        if (navProgText) navProgText.textContent = roundedPct + '% read';
+        lastPctRounded = roundedPct;
+      }
 
       // Navigation Highlighting
       var y = s + 130;
