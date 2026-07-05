@@ -1,3 +1,7 @@
 ## 2026-06-25 - Layout Thrashing in Scroll Listeners
 **Learning:** Accessing `offsetTop` or `scrollHeight` inside high-frequency scroll events without throttling causes "layout thrashing" because the browser must synchronously recalculate the layout before returning the value. In single-page apps with many sections, this significantly impacts scroll performance.
 **Action:** Always cache layout-sensitive values (like section offsets) in a variable and only update them when the layout actually changes (resize, view switch, content expansion). Use `requestAnimationFrame` to batch any DOM writes (like updating progress bars or classes) to ensure they happen at the start of the next frame.
+
+## 2026-06-25 - Responsive Reflow and Dimension Caching
+**Learning:** When caching element dimensions (`offsetWidth`/`offsetHeight`) to avoid layout thrashing in high-frequency events (like `mousemove`), the measurement must be taken under the exact same CSS constraints as the final render. If a tooltip has a viewport-relative `maxWidth`, this constraint must be applied *before* measuring dimensions, or the element might reflow later, making the cached values (and any boundary detection logic based on them) incorrect.
+**Action:** Always set `maxWidth` and ensure content is updated before reading dimensions for caching. Use `visibility: hidden` to hide the "measurement" phase from the user while allowing the browser to calculate accurate layout properties.
