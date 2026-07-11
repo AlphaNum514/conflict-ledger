@@ -3588,6 +3588,34 @@ function downloadPDF() {
 })();
 
 /* ─── CALCULATOR ─────────────────────────────────────────── */
+/**
+ * PERFORMANCE OPTIMIZATION: DOM Element Caching
+ * We cache all 14 interactive elements here to eliminate redundant document.getElementById
+ * lookups during high-frequency 'oninput' slider events. This significantly reduces
+ * main-thread execution time during rapid user interaction.
+ */
+var calcEls = {
+  sl: {
+    def:   document.getElementById('sl-defense'),
+    alloc: document.getElementById('sl-alloc'),
+    inten: document.getElementById('sl-intensity'),
+    oil:   document.getElementById('sl-oil')
+  },
+  val: {
+    def:   document.getElementById('val-defense'),
+    alloc: document.getElementById('val-alloc'),
+    inten: document.getElementById('val-intensity'),
+    oil:   document.getElementById('val-oil')
+  },
+  res: {
+    def:   document.getElementById('res-defense'),
+    en:    document.getElementById('res-energy'),
+    port:  document.getElementById('res-portfolio'),
+    gold:  document.getElementById('res-gold'),
+    cons:  document.getElementById('res-consumer'),
+    ins:   document.getElementById('res-insurance')
+  }
+};
 // Preset scenarios matching the Scenarios section above
 var PRESETS = {
   escalation:   { defense: 30, alloc: 35, intensity: 90, oil: 18 },
@@ -3597,26 +3625,46 @@ var PRESETS = {
 
 function applyPreset(name) {
   var p = PRESETS[name];
-  if (!p) return;
-  document.getElementById('sl-defense').value   = p.defense;
-  document.getElementById('sl-alloc').value      = p.alloc;
-  document.getElementById('sl-intensity').value  = p.intensity;
-  document.getElementById('sl-oil').value        = p.oil;
+  if (!p || !calcEls.sl.def) return;
+  calcEls.sl.def.value   = p.defense;
+  calcEls.sl.alloc.value = p.alloc;
+  calcEls.sl.inten.value = p.intensity;
+  calcEls.sl.oil.value   = p.oil;
   calcUpdate();
 }
 
 function calcUpdate() {
-  const def=+document.getElementById('sl-defense').value, alloc=+document.getElementById('sl-alloc').value, inten=+document.getElementById('sl-intensity').value, oil=+document.getElementById('sl-oil').value;
-  document.getElementById('val-defense').textContent=(def>=0?'+':'')+def+'%';
-  document.getElementById('val-alloc').textContent=alloc+'%';
-  document.getElementById('val-intensity').textContent=inten;
-  document.getElementById('val-oil').textContent=(oil>=0?'+':'')+oil+'%';
-  const dr=(def*1.85+inten*.28).toFixed(1), er=(oil*1.6+inten*.08).toFixed(1), gr=(inten*.06+Math.max(0,-def)*.4).toFixed(1), cr=(-inten*.04-oil*.2).toFixed(1), ir=(oil*1.1+inten*.15).toFixed(1), pr=((alloc/100)*parseFloat(dr)+(1-alloc/100)*parseFloat(er)*.3).toFixed(1);
-  const set=(id,v,p,n)=>{const el=document.getElementById(id);el.textContent=(parseFloat(v)>=0?'+':'')+v+'%';el.className='res-val '+(parseFloat(v)>0?p:parseFloat(v)<0?n:'neu');};
-  set('res-defense',dr,'pos','neg'); set('res-energy',er,'pos','neg'); set('res-portfolio',pr,'pos','neg');
-  document.getElementById('res-gold').textContent='+'+gr+'%';
-  set('res-consumer',cr,'pos','neg');
-  document.getElementById('res-insurance').textContent='+'+ir+'% premium';
+  if (!calcEls.sl.def) return;
+  const def = +calcEls.sl.def.value,
+        alloc = +calcEls.sl.alloc.value,
+        inten = +calcEls.sl.inten.value,
+        oil = +calcEls.sl.oil.value;
+
+  calcEls.val.def.textContent   = (def>=0?'+':'')+def+'%';
+  calcEls.val.alloc.textContent = alloc+'%';
+  calcEls.val.inten.textContent = inten;
+  calcEls.val.oil.textContent   = (oil>=0?'+':'')+oil+'%';
+
+  const dr = (def*1.85+inten*.28).toFixed(1),
+        er = (oil*1.6+inten*.08).toFixed(1),
+        gr = (inten*.06+Math.max(0,-def)*.4).toFixed(1),
+        cr = (-inten*.04-oil*.2).toFixed(1),
+        ir = (oil*1.1+inten*.15).toFixed(1),
+        pr = ((alloc/100)*parseFloat(dr)+(1-alloc/100)*parseFloat(er)*.3).toFixed(1);
+
+  // Helper updated to use cached element directly
+  const set = (el,v,p,n) => {
+    el.textContent = (parseFloat(v)>=0?'+':'')+v+'%';
+    el.className = 'res-val ' + (parseFloat(v)>0?p:parseFloat(v)<0?n:'neu');
+  };
+
+  set(calcEls.res.def, dr, 'pos', 'neg');
+  set(calcEls.res.en,  er, 'pos', 'neg');
+  set(calcEls.res.port, pr, 'pos', 'neg');
+
+  calcEls.res.gold.textContent = '+' + gr + '%';
+  set(calcEls.res.cons, cr, 'pos', 'neg');
+  calcEls.res.ins.textContent = '+' + ir + '% premium';
 }
 
 /* expose observers globally so initResearch() can access them */
