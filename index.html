@@ -984,13 +984,17 @@ footer {
 
 /* ── CUSTOM TOOLTIP ── */
 .tip {
-  position: absolute; z-index: 9000;
+  /* BOLT: Use fixed positioning with 0/0 origin to allow GPU-accelerated
+     translate3d() positioning without layout recalculation. */
+  position: fixed; top: 0; left: 0; z-index: 9000;
   background: var(--surface); color: var(--text);
   border: 1px solid var(--border2);
   box-shadow: 0 4px 16px rgba(0,0,0,.12);
   padding: 10px 14px; max-width: 260px;
   font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; line-height: 1.62;
   pointer-events: none; opacity: 0; transition: opacity .18s ease;
+  /* BOLT: Promote to own compositor layer to avoid repaints during movement. */
+  will-change: transform;
 }
 .tip.show { opacity: 1; }
 .tip-title { font-weight: 700; color: var(--navy); margin-bottom: 5px; font-size: 11px; }
@@ -3548,6 +3552,8 @@ function downloadPDF() {
   tip.className = 'tip'; tip.id = 'globalTip';
   document.body.appendChild(tip);
   let hideTimer = null;
+  /* BOLT: Cache dimensions to avoid layout thrashing in high-frequency mousemove events. */
+  let cachedW = 0, cachedH = 0;
 
   function showTip(el, e) {
     const raw = el.getAttribute('data-tip');
@@ -3561,24 +3567,49 @@ function downloadPDF() {
       (titleText ? `<div class="tip-title">${titleText}</div>` : '') +
       `<div>${body}</div>` +
       (src ? `<div class="tip-src">${src}</div>` : '');
+
+    /* BOLT: Measure once before showing to avoid recurring layout-triggering reads. */
+    const vw = window.innerWidth;
+    const tw = Math.min(260, vw - 32);
+    tip.style.maxWidth = tw + 'px';
+
+    // Temporarily ensure visibility for measurement if not already 'show'
+    const wasHidden = !tip.classList.contains('show');
+    if (wasHidden) { tip.style.visibility = 'hidden'; tip.classList.add('show'); }
+    cachedW = tip.offsetWidth;
+    cachedH = tip.offsetHeight;
+    if (wasHidden) { tip.classList.remove('show'); tip.style.visibility = ''; }
+
     positionTip(e);
     clearTimeout(hideTimer);
     tip.classList.add('show');
   }
 
   function positionTip(e) {
-    const vw=window.innerWidth, tw=Math.min(260,vw-32);
-    tip.style.maxWidth = tw+'px';
-    let x=e.clientX+14, y=e.clientY-10;
-    if (x+tw > vw-12) x=e.clientX-tw-14;
-    const th=tip.offsetHeight||120;
-    if (y+th > window.innerHeight-12) y=e.clientY-th-6;
-    tip.style.left=(x+window.scrollX)+'px';
-    tip.style.top=(y+window.scrollY)+'px';
+    const vw = window.innerWidth;
+    let x = e.clientX + 14, y = e.clientY - 10;
+    /* BOLT: Use cached dimensions for collision detection to avoid layout thrashing. */
+    if (x + cachedW > vw - 12) x = e.clientX - cachedW - 14;
+    if (y + cachedH > window.innerHeight - 12) y = e.clientY - cachedH - 6;
+
+    /* BOLT: Use translate3d to offload positioning to the GPU, avoiding expensive
+       layout and paint cycles associated with 'left' and 'top' properties. */
+    tip.style.transform = `translate3d(${x}px, ${y}px, 0)`;
   }
 
+  let tipRaf = false;
   document.addEventListener('mouseover', e => { const el=e.target.closest('[data-tip]'); if(el) showTip(el,e); });
-  document.addEventListener('mousemove', e => { if(!tip.classList.contains('show')) return; const el=e.target.closest('[data-tip]'); if(el) positionTip(e); });
+  document.addEventListener('mousemove', e => {
+    if (!tip.classList.contains('show') || tipRaf) return;
+    /* BOLT: Throttle updates to requestAnimationFrame to match display refresh rate.
+       Copying event coordinates as event objects are recycled by some browsers. */
+    const cx = e.clientX, cy = e.clientY;
+    tipRaf = true;
+    requestAnimationFrame(() => {
+      positionTip({ clientX: cx, clientY: cy });
+      tipRaf = false;
+    });
+  });
   document.addEventListener('mouseout',  e => { const el=e.target.closest('[data-tip]'); if(el&&!el.contains(e.relatedTarget)){clearTimeout(hideTimer);hideTimer=setTimeout(()=>tip.classList.remove('show'),120);} });
   document.addEventListener('touchend',  e => {
     const el=e.target.closest('[data-tip]');
