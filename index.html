@@ -3367,6 +3367,27 @@ function initResearch() {
 /* THEME */
 const html = document.documentElement;
 const dmBtn = document.getElementById('dmBtn');
+
+/* PERFORMANCE: Cache calculator elements to eliminate redundant DOM lookups during slider interaction */
+const calcEls = {
+  // Inputs
+  sDef:  document.getElementById('sl-defense'),
+  sAll:  document.getElementById('sl-alloc'),
+  sInt:  document.getElementById('sl-intensity'),
+  sOil:  document.getElementById('sl-oil'),
+  // Current values (labels)
+  vDef:  document.getElementById('val-defense'),
+  vAll:  document.getElementById('val-alloc'),
+  vInt:  document.getElementById('val-intensity'),
+  vOil:  document.getElementById('val-oil'),
+  // Results
+  rDef:  document.getElementById('res-defense'),
+  rEne:  document.getElementById('res-energy'),
+  rPor:  document.getElementById('res-portfolio'),
+  rGol:  document.getElementById('res-gold'),
+  rCon:  document.getElementById('res-consumer'),
+  rIns:  document.getElementById('res-insurance')
+};
 let dark = false;
 dmBtn.addEventListener('click', () => {
   dark = !dark;
@@ -3598,25 +3619,45 @@ var PRESETS = {
 function applyPreset(name) {
   var p = PRESETS[name];
   if (!p) return;
-  document.getElementById('sl-defense').value   = p.defense;
-  document.getElementById('sl-alloc').value      = p.alloc;
-  document.getElementById('sl-intensity').value  = p.intensity;
-  document.getElementById('sl-oil').value        = p.oil;
+  calcEls.sDef.value = p.defense;
+  calcEls.sAll.value = p.alloc;
+  calcEls.sInt.value = p.intensity;
+  calcEls.sOil.value = p.oil;
   calcUpdate();
 }
 
+/**
+ * PERFORMANCE: Optimized Portfolio Impact Simulator update function.
+ * Uses cached DOM references in `calcEls` to avoid expensive layout-triggering
+ * getElementById calls during high-frequency slider 'oninput' events.
+ */
 function calcUpdate() {
-  const def=+document.getElementById('sl-defense').value, alloc=+document.getElementById('sl-alloc').value, inten=+document.getElementById('sl-intensity').value, oil=+document.getElementById('sl-oil').value;
-  document.getElementById('val-defense').textContent=(def>=0?'+':'')+def+'%';
-  document.getElementById('val-alloc').textContent=alloc+'%';
-  document.getElementById('val-intensity').textContent=inten;
-  document.getElementById('val-oil').textContent=(oil>=0?'+':'')+oil+'%';
-  const dr=(def*1.85+inten*.28).toFixed(1), er=(oil*1.6+inten*.08).toFixed(1), gr=(inten*.06+Math.max(0,-def)*.4).toFixed(1), cr=(-inten*.04-oil*.2).toFixed(1), ir=(oil*1.1+inten*.15).toFixed(1), pr=((alloc/100)*parseFloat(dr)+(1-alloc/100)*parseFloat(er)*.3).toFixed(1);
-  const set=(id,v,p,n)=>{const el=document.getElementById(id);el.textContent=(parseFloat(v)>=0?'+':'')+v+'%';el.className='res-val '+(parseFloat(v)>0?p:parseFloat(v)<0?n:'neu');};
-  set('res-defense',dr,'pos','neg'); set('res-energy',er,'pos','neg'); set('res-portfolio',pr,'pos','neg');
-  document.getElementById('res-gold').textContent='+'+gr+'%';
-  set('res-consumer',cr,'pos','neg');
-  document.getElementById('res-insurance').textContent='+'+ir+'% premium';
+  const def = +calcEls.sDef.value, alloc = +calcEls.sAll.value, inten = +calcEls.sInt.value, oil = +calcEls.sOil.value;
+
+  calcEls.vDef.textContent = (def >= 0 ? '+' : '') + def + '%';
+  calcEls.vAll.textContent = alloc + '%';
+  calcEls.vInt.textContent = inten;
+  calcEls.vOil.textContent = (oil >= 0 ? '+' : '') + oil + '%';
+
+  const dr = (def * 1.85 + inten * .28).toFixed(1),
+        er = (oil * 1.6 + inten * .08).toFixed(1),
+        gr = (inten * .06 + Math.max(0, -def) * .4).toFixed(1),
+        cr = (-inten * .04 - oil * .2).toFixed(1),
+        ir = (oil * 1.1 + inten * .15).toFixed(1),
+        pr = ((alloc / 100) * parseFloat(dr) + (1 - alloc / 100) * parseFloat(er) * .3).toFixed(1);
+
+  const set = (el, v, p, n) => {
+    el.textContent = (parseFloat(v) >= 0 ? '+' : '') + v + '%';
+    el.className = 'res-val ' + (parseFloat(v) > 0 ? p : parseFloat(v) < 0 ? n : 'neu');
+  };
+
+  set(calcEls.rDef, dr, 'pos', 'neg');
+  set(calcEls.rEne, er, 'pos', 'neg');
+  set(calcEls.rPor, pr, 'pos', 'neg');
+  set(calcEls.rCon, cr, 'pos', 'neg');
+
+  calcEls.rGol.textContent = '+' + gr + '%';
+  calcEls.rIns.textContent = '+' + ir + '% premium';
 }
 
 /* expose observers globally so initResearch() can access them */
