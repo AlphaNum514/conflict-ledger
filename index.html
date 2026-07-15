@@ -984,13 +984,17 @@ footer {
 
 /* ── CUSTOM TOOLTIP ── */
 .tip {
-  position: absolute; z-index: 9000;
+  /* BOLT: Fixed position + will-change:transform for GPU acceleration and to avoid layout thrashing on move */
+  position: fixed; top: 0; left: 0; z-index: 9000;
   background: var(--surface); color: var(--text);
   border: 1px solid var(--border2);
   box-shadow: 0 4px 16px rgba(0,0,0,.12);
   padding: 10px 14px; max-width: 260px;
+  /* BOLT: Ensure responsiveness on very small screens */
+  width: calc(100vw - 32px);
   font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; line-height: 1.62;
   pointer-events: none; opacity: 0; transition: opacity .18s ease;
+  will-change: transform;
 }
 .tip.show { opacity: 1; }
 .tip-title { font-weight: 700; color: var(--navy); margin-bottom: 5px; font-size: 11px; }
@@ -3547,7 +3551,7 @@ function downloadPDF() {
   const tip = document.createElement('div');
   tip.className = 'tip'; tip.id = 'globalTip';
   document.body.appendChild(tip);
-  let hideTimer = null;
+  let hideTimer = null, tipRaf = false, tW = 0, tH = 0, lastX = 0, lastY = 0;
 
   function showTip(el, e) {
     const raw = el.getAttribute('data-tip');
@@ -3561,24 +3565,48 @@ function downloadPDF() {
       (titleText ? `<div class="tip-title">${titleText}</div>` : '') +
       `<div>${body}</div>` +
       (src ? `<div class="tip-src">${src}</div>` : '');
-    positionTip(e);
-    clearTimeout(hideTimer);
+
+    // BOLT: Cache dimensions while hidden to avoid layout thrashing during mousemove
+    tip.style.visibility = 'hidden';
     tip.classList.add('show');
+    tW = tip.offsetWidth;
+    tH = tip.offsetHeight;
+
+    // BOLT: Set initial position synchronously to prevent flicker before first rAF
+    lastX = e.clientX; lastY = e.clientY;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    let x = lastX + 14, y = lastY - 10;
+    if (x + tW > vw - 12) x = lastX - tW - 14;
+    if (y + tH > vh - 12) y = lastY - tH - 6;
+    tip.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0)';
+    tip.style.visibility = '';
+
+    clearTimeout(hideTimer);
   }
 
   function positionTip(e) {
-    const vw=window.innerWidth, tw=Math.min(260,vw-32);
-    tip.style.maxWidth = tw+'px';
-    let x=e.clientX+14, y=e.clientY-10;
-    if (x+tw > vw-12) x=e.clientX-tw-14;
-    const th=tip.offsetHeight||120;
-    if (y+th > window.innerHeight-12) y=e.clientY-th-6;
-    tip.style.left=(x+window.scrollX)+'px';
-    tip.style.top=(y+window.scrollY)+'px';
+    // BOLT: Update latest coordinates for rAF to use
+    lastX = e.clientX; lastY = e.clientY;
+    if (tipRaf) return;
+    tipRaf = true;
+    requestAnimationFrame(() => {
+      const vw = window.innerWidth, vh = window.innerHeight;
+      let x = lastX + 14, y = lastY - 10;
+      if (x + tW > vw - 12) x = lastX - tW - 14;
+      if (y + tH > vh - 12) y = lastY - tH - 6;
+
+      // BOLT: translate3d triggers GPU layer promotion for smoother movement and avoids 'left/top' layout triggers
+      tip.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0)';
+      tipRaf = false;
+    });
   }
 
   document.addEventListener('mouseover', e => { const el=e.target.closest('[data-tip]'); if(el) showTip(el,e); });
-  document.addEventListener('mousemove', e => { if(!tip.classList.contains('show')) return; const el=e.target.closest('[data-tip]'); if(el) positionTip(e); });
+  document.addEventListener('mousemove', e => {
+    if(!tip.classList.contains('show')) return;
+    // BOLT: Skip expensive .closest() check if tooltip is already showing
+    positionTip(e);
+  });
   document.addEventListener('mouseout',  e => { const el=e.target.closest('[data-tip]'); if(el&&!el.contains(e.relatedTarget)){clearTimeout(hideTimer);hideTimer=setTimeout(()=>tip.classList.remove('show'),120);} });
   document.addEventListener('touchend',  e => {
     const el=e.target.closest('[data-tip]');
