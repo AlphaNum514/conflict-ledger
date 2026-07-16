@@ -983,8 +983,17 @@ footer {
 .pdf-btn svg { width: 12px; height: 12px; flex-shrink: 0; }
 
 /* ── CUSTOM TOOLTIP ── */
+/*
+   ⚡ BOLT OPTIMIZATION: GPU Layer Promotion
+   Using 'position: fixed' combined with 'will-change: transform' promotes the tooltip
+   to its own GPU compositor layer. This allows positioning via 'translate3d' without
+   triggering expensive browser layout/reflow cycles during mouse movement, ensuring
+   buttery-smooth 60fps+ tracking. 'top: 0; left: 0;' ensures the transform
+   coordinates are relative to the viewport origin.
+*/
 .tip {
-  position: absolute; z-index: 9000;
+  position: fixed; top: 0; left: 0; z-index: 9000;
+  will-change: transform;
   background: var(--surface); color: var(--text);
   border: 1px solid var(--border2);
   box-shadow: 0 4px 16px rgba(0,0,0,.12);
@@ -3544,46 +3553,139 @@ function downloadPDF() {
 
 /* ─── UNIVERSAL TOOLTIP ENGINE ───────────────────────────── */
 (function() {
-  const tip = document.createElement('div');
+  var tip = document.createElement('div');
   tip.className = 'tip'; tip.id = 'globalTip';
   document.body.appendChild(tip);
-  let hideTimer = null;
 
+  var hideTimer = null;
+  var cachedWidth = 0;
+  var cachedHeight = 0;
+  var lastX = 0;
+  var lastY = 0;
+  var tipRaf = false;
+
+  /*
+     ⚡ BOLT OPTIMIZATION: Dimension Caching & Sync Positioning
+     To eliminate layout thrashing on mousemove, we apply viewport-relative CSS constraints
+     before caching the element's layout dimensions (offsetWidth, offsetHeight) synchronously.
+     Using 'visibility: hidden' prevents any 'pop-in' or visual flicker on the first frame of display,
+     as the tooltip is synchronously pre-positioned before being made visible.
+  */
   function showTip(el, e) {
-    const raw = el.getAttribute('data-tip');
+    var raw = el.getAttribute('data-tip');
     if (!raw) return;
-    const parts = raw.split('|');
-    const body = parts[0].trim();
-    const src  = parts[1] ? parts[1].trim() : null;
-    const titleEl = el.querySelector('.kf-num, .stat-val') || null;
-    const titleText = titleEl ? titleEl.textContent.trim().slice(0,48) : '';
+    var parts = raw.split('|');
+    var body = parts[0].trim();
+    var src  = parts[1] ? parts[1].trim() : null;
+    var titleEl = el.querySelector('.kf-num, .stat-val') || null;
+    var titleText = titleEl ? titleEl.textContent.trim().slice(0, 48) : '';
+
     tip.innerHTML =
-      (titleText ? `<div class="tip-title">${titleText}</div>` : '') +
-      `<div>${body}</div>` +
-      (src ? `<div class="tip-src">${src}</div>` : '');
-    positionTip(e);
+      (titleText ? '<div class="tip-title">' + titleText + '</div>' : '') +
+      '<div>' + body + '</div>' +
+      (src ? '<div class="tip-src">' + src + '</div>' : '');
+
+    // 1. Temporarily hide during measurement and positioning to avoid pop-in
+    tip.style.visibility = 'hidden';
+
+    // 2. Set responsive constraints prior to measuring dimensions
+    var vw = window.innerWidth;
+    var tw = Math.min(260, vw - 32);
+    tip.style.maxWidth = tw + 'px';
+
+    // 3. Measure and cache dimensions once (eliminates layout reads on mousemove)
+    cachedWidth = tip.offsetWidth || tw;
+    cachedHeight = tip.offsetHeight || 120;
+
+    // 4. Position synchronously before revealing
+    lastX = e.clientX;
+    lastY = e.clientY;
+    positionTipSync(lastX, lastY);
+
+    // 5. Reveal positioned tooltip
+    tip.style.visibility = '';
     clearTimeout(hideTimer);
     tip.classList.add('show');
   }
 
-  function positionTip(e) {
-    const vw=window.innerWidth, tw=Math.min(260,vw-32);
-    tip.style.maxWidth = tw+'px';
-    let x=e.clientX+14, y=e.clientY-10;
-    if (x+tw > vw-12) x=e.clientX-tw-14;
-    const th=tip.offsetHeight||120;
-    if (y+th > window.innerHeight-12) y=e.clientY-th-6;
-    tip.style.left=(x+window.scrollX)+'px';
-    tip.style.top=(y+window.scrollY)+'px';
+  /*
+     ⚡ BOLT OPTIMIZATION: GPU-Accelerated Positioning
+     Instead of absolute top/left which triggers layout/repaint cycles, we use transform: translate3d()
+     which utilizes the GPU to translate the promoted compositor layer. Viewport coordinates (clientX/Y)
+     are used directly, simplifying the math and avoiding window.scrollY/scrollX DOM queries.
+  */
+  function positionTipSync(clientX, clientY) {
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+    var x = clientX + 14;
+    var y = clientY - 10;
+
+    // Horizontal collision check
+    if (x + cachedWidth > vw - 12) {
+      x = clientX - cachedWidth - 14;
+    }
+    // Vertical collision check
+    if (y + cachedHeight > vh - 12) {
+      y = clientY - cachedHeight - 6;
+    }
+
+    // Apply 3D transform for hardware acceleration
+    tip.style.transform = 'translate3d(' + x + 'px, ' + y + 'px, 0)';
   }
 
-  document.addEventListener('mouseover', e => { const el=e.target.closest('[data-tip]'); if(el) showTip(el,e); });
-  document.addEventListener('mousemove', e => { if(!tip.classList.contains('show')) return; const el=e.target.closest('[data-tip]'); if(el) positionTip(e); });
-  document.addEventListener('mouseout',  e => { const el=e.target.closest('[data-tip]'); if(el&&!el.contains(e.relatedTarget)){clearTimeout(hideTimer);hideTimer=setTimeout(()=>tip.classList.remove('show'),120);} });
-  document.addEventListener('touchend',  e => {
-    const el=e.target.closest('[data-tip]');
-    if(el){e.preventDefault();if(tip.classList.contains('show')){tip.classList.remove('show');return;}showTip(el,{clientX:e.changedTouches[0].clientX,clientY:e.changedTouches[0].clientY});}
-    else tip.classList.remove('show');
+  document.addEventListener('mouseover', function(e) {
+    var el = e.target.closest('[data-tip]');
+    if (el) showTip(el, e);
+  });
+
+  /*
+     ⚡ BOLT OPTIMIZATION: Frame Throttling & Lookup Bypass
+     Gating mousemove events inside a requestAnimationFrame prevents redundant calculations,
+     aligning updates perfectly with the screen refresh cycle. While the tooltip is already visible,
+     we bypass expensive closest('[data-tip]') lookups to maintain a high and consistent frame rate.
+  */
+  document.addEventListener('mousemove', function(e) {
+    if (!tip.classList.contains('show')) return;
+
+    lastX = e.clientX;
+    lastY = e.clientY;
+
+    if (!tipRaf) {
+      tipRaf = true;
+      requestAnimationFrame(function() {
+        if (tip.classList.contains('show')) {
+          positionTipSync(lastX, lastY);
+        }
+        tipRaf = false;
+      });
+    }
+  });
+
+  document.addEventListener('mouseout', function(e) {
+    var el = e.target.closest('[data-tip]');
+    if (el && !el.contains(e.relatedTarget)) {
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(function() {
+        tip.classList.remove('show');
+      }, 120);
+    }
+  });
+
+  document.addEventListener('touchend', function(e) {
+    var el = e.target.closest('[data-tip]');
+    if (el) {
+      e.preventDefault();
+      if (tip.classList.contains('show')) {
+        tip.classList.remove('show');
+        return;
+      }
+      showTip(el, {
+        clientX: e.changedTouches[0].clientX,
+        clientY: e.changedTouches[0].clientY
+      });
+    } else {
+      tip.classList.remove('show');
+    }
   });
 })();
 
