@@ -984,7 +984,10 @@ footer {
 
 /* ── CUSTOM TOOLTIP ── */
 .tip {
-  position: absolute; z-index: 9000;
+  /* GPU layer promotion via position: fixed and will-change: transform avoids full-document repaints
+     and layout thrashing during mouse movement by utilizing composited layer rendering. */
+  position: fixed; top: 0; left: 0; z-index: 9000;
+  will-change: transform;
   background: var(--surface); color: var(--text);
   border: 1px solid var(--border2);
   box-shadow: 0 4px 16px rgba(0,0,0,.12);
@@ -3547,7 +3550,14 @@ function downloadPDF() {
   const tip = document.createElement('div');
   tip.className = 'tip'; tip.id = 'globalTip';
   document.body.appendChild(tip);
+
+  // Variables for caching dimensions and throttling updates to eliminate layout thrashing
   let hideTimer = null;
+  let cachedWidth = 0;
+  let cachedHeight = 0;
+  let lastX = 0;
+  let lastY = 0;
+  let tipRaf = false;
 
   function showTip(el, e) {
     const raw = el.getAttribute('data-tip');
@@ -3561,29 +3571,96 @@ function downloadPDF() {
       (titleText ? `<div class="tip-title">${titleText}</div>` : '') +
       `<div>${body}</div>` +
       (src ? `<div class="tip-src">${src}</div>` : '');
-    positionTip(e);
+
+    // OPTIMIZATION: Dimension Caching and Flash Prevention
+    // Set visibility to hidden to measure elements without causing a flash of unpositioned content
+    tip.style.visibility = 'hidden';
+
+    // Apply responsive constraints before measuring to support reflow correctly
+    const vw = window.innerWidth;
+    const tw = Math.min(260, vw - 32);
+    tip.style.maxWidth = tw + 'px';
+
+    // Cache the dimensions. Using tip.offsetWidth || tw handles narrow tooltips correctly.
+    cachedWidth = tip.offsetWidth || tw;
+    cachedHeight = tip.offsetHeight || 120;
+
+    // Restore visibility state
+    tip.style.visibility = '';
+
+    // OPTIMIZATION: Synchronous Initial Positioning
+    // Apply the position synchronously using client coordinates to prevent first-frame "flicker" or "pop-in"
+    positionTipSync(e.clientX, e.clientY);
+
     clearTimeout(hideTimer);
     tip.classList.add('show');
   }
 
-  function positionTip(e) {
-    const vw=window.innerWidth, tw=Math.min(260,vw-32);
-    tip.style.maxWidth = tw+'px';
-    let x=e.clientX+14, y=e.clientY-10;
-    if (x+tw > vw-12) x=e.clientX-tw-14;
-    const th=tip.offsetHeight||120;
-    if (y+th > window.innerHeight-12) y=e.clientY-th-6;
-    tip.style.left=(x+window.scrollX)+'px';
-    tip.style.top=(y+window.scrollY)+'px';
+  function positionTipSync(cx, cy) {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    let x = cx + 14;
+    let y = cy - 10;
+
+    // Viewport collision-detection & horizontal/vertical flipping logic
+    if (x + cachedWidth > vw - 12) {
+      x = cx - cachedWidth - 14;
+    }
+    if (y + cachedHeight > vh - 12) {
+      y = cy - cachedHeight - 6;
+    }
+
+    // OPTIMIZATION: GPU-accelerated translate3d bypassing layout/paint cycles
+    tip.style.transform = `translate3d(${x}px, ${y}px, 0)`;
   }
 
-  document.addEventListener('mouseover', e => { const el=e.target.closest('[data-tip]'); if(el) showTip(el,e); });
-  document.addEventListener('mousemove', e => { if(!tip.classList.contains('show')) return; const el=e.target.closest('[data-tip]'); if(el) positionTip(e); });
-  document.addEventListener('mouseout',  e => { const el=e.target.closest('[data-tip]'); if(el&&!el.contains(e.relatedTarget)){clearTimeout(hideTimer);hideTimer=setTimeout(()=>tip.classList.remove('show'),120);} });
-  document.addEventListener('touchend',  e => {
-    const el=e.target.closest('[data-tip]');
-    if(el){e.preventDefault();if(tip.classList.contains('show')){tip.classList.remove('show');return;}showTip(el,{clientX:e.changedTouches[0].clientX,clientY:e.changedTouches[0].clientY});}
-    else tip.classList.remove('show');
+  document.addEventListener('mouseover', e => {
+    const el = e.target.closest('[data-tip]');
+    if (el) showTip(el, e);
+  });
+
+  document.addEventListener('mousemove', e => {
+    // OPTIMIZATION: Avoid redundant DOM queries (closest('[data-tip]')) while tooltip is active
+    if (!tip.classList.contains('show')) return;
+
+    // Copy client coordinates to prevent issues with browser event object recycling in rAF callbacks
+    lastX = e.clientX;
+    lastY = e.clientY;
+
+    // OPTIMIZATION: Frame throttling via requestAnimationFrame gate (tipRaf)
+    if (!tipRaf) {
+      tipRaf = true;
+      requestAnimationFrame(() => {
+        positionTipSync(lastX, lastY);
+        tipRaf = false;
+      });
+    }
+  }, { passive: true });
+
+  document.addEventListener('mouseout', e => {
+    const el = e.target.closest('[data-tip]');
+    if (el && !el.contains(e.relatedTarget)) {
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => tip.classList.remove('show'), 120);
+    }
+  });
+
+  document.addEventListener('touchend', e => {
+    const el = e.target.closest('[data-tip]');
+    if (el) {
+      e.preventDefault();
+      if (tip.classList.contains('show')) {
+        tip.classList.remove('show');
+        return;
+      }
+      showTip(el, {
+        clientX: e.changedTouches[0].clientX,
+        clientY: e.changedTouches[0].clientY
+      });
+    } else {
+      tip.classList.remove('show');
+    }
   });
 })();
 
