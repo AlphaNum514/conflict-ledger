@@ -1,3 +1,7 @@
 ## 2026-06-25 - Layout Thrashing in Scroll Listeners
 **Learning:** Accessing `offsetTop` or `scrollHeight` inside high-frequency scroll events without throttling causes "layout thrashing" because the browser must synchronously recalculate the layout before returning the value. In single-page apps with many sections, this significantly impacts scroll performance.
 **Action:** Always cache layout-sensitive values (like section offsets) in a variable and only update them when the layout actually changes (resize, view switch, content expansion). Use `requestAnimationFrame` to batch any DOM writes (like updating progress bars or classes) to ensure they happen at the start of the next frame.
+
+## 2026-07-20 - High-Frequency Cursor Tracking and Layout Thrashing in Tooltips
+**Learning:** Querying element size (`offsetHeight`, `offsetWidth`) or scroll positions (`scrollX`, `scrollY`) inside high-frequency `mousemove` events blocks the browser thread and triggers layout thrashing. By using `position: fixed` and `will-change: transform`, coordinates from the viewport (`clientX`/`clientY`) can be mapped directly to CSS transforms via `translate3d` without any DOM layout queries.
+**Action:** Always cache tooltip dimensions in the trigger's `mouseover` event rather than reading them during tracking. Frame-throttle updates with `requestAnimationFrame` and skip redundant DOM queries like `closest()` while the tooltip is active.
