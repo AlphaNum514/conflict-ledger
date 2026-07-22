@@ -983,14 +983,22 @@ footer {
 .pdf-btn svg { width: 12px; height: 12px; flex-shrink: 0; }
 
 /* ── CUSTOM TOOLTIP ── */
+/*
+  ⚡ Bolt Optimization: Tooltip styling optimized for high-performance.
+  - Promoted to a composite GPU layer using 'will-change: transform' to prevent main-thread layout recalculations on mouse movement.
+  - Used 'position: fixed' to decouple tooltip from document scroll layout and simplify positioning calculations to client coordinates.
+  - Explicitly set 'top: 0; left: 0;' so 'translate3d' coordinates map directly and predictably to the viewport origin.
+  - Set 'width: calc(100vw - 32px)' in addition to 'max-width: 260px' to ensure full responsiveness on narrow mobile displays.
+*/
 .tip {
-  position: absolute; z-index: 9000;
+  position: fixed; top: 0; left: 0; z-index: 9000;
   background: var(--surface); color: var(--text);
   border: 1px solid var(--border2);
   box-shadow: 0 4px 16px rgba(0,0,0,.12);
-  padding: 10px 14px; max-width: 260px;
+  padding: 10px 14px; width: calc(100vw - 32px); max-width: 260px;
   font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; line-height: 1.62;
   pointer-events: none; opacity: 0; transition: opacity .18s ease;
+  will-change: transform;
 }
 .tip.show { opacity: 1; }
 .tip-title { font-weight: 700; color: var(--navy); margin-bottom: 5px; font-size: 11px; }
@@ -3543,47 +3551,132 @@ function downloadPDF() {
 }
 
 /* ─── UNIVERSAL TOOLTIP ENGINE ───────────────────────────── */
+/*
+  ⚡ Bolt Optimization: Universal Tooltip Engine.
+  - Dimension Caching: Caches offsetWidth and offsetHeight on tooltip display (showTip) to avoid layout thrashing during mouse moves.
+  - Synchronous Initialization: Applies position coordinates using translate3d before removing visibility: hidden, preventing first-frame pop-in.
+  - Frame Throttling: Gates mousemove updates using requestAnimationFrame (tipRaf), syncing style updates with the browser refresh rate.
+  - Reduced DOM Traversal: Completely skips closest('[data-tip]') lookups on high-frequency mousemove events.
+  - Event Capturing: Copies event.clientX/Y to local variables synchronously, avoiding recycled browser event properties inside the RAF callback.
+  - Direct Viewport Translation: Uses position: fixed so translate3d relies on raw client coordinates, bypassing expensive scroll reads.
+*/
 (function() {
-  const tip = document.createElement('div');
-  tip.className = 'tip'; tip.id = 'globalTip';
+  var tip = document.createElement('div');
+  tip.className = 'tip';
+  tip.id = 'globalTip';
   document.body.appendChild(tip);
-  let hideTimer = null;
+
+  var hideTimer = null;
+  var cachedWidth = 260;
+  var cachedHeight = 120;
+  var lastX = 0;
+  var lastY = 0;
+  var tipRaf = false;
+
+  function getCoords(clientX, clientY) {
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+    var x = clientX + 14;
+    var y = clientY - 10;
+
+    if (x + cachedWidth > vw - 12) {
+      x = clientX - cachedWidth - 14;
+    }
+    if (y + cachedHeight > vh - 12) {
+      y = clientY - cachedHeight - 6;
+    }
+
+    // Bounds check to ensure tooltip remains in viewport
+    if (x < 12) x = 12;
+    if (y < 12) y = 12;
+
+    return { x: x, y: y };
+  }
+
+  function tickPosition() {
+    if (tip.classList.contains('show')) {
+      var coords = getCoords(lastX, lastY);
+      tip.style.transform = 'translate3d(' + coords.x + 'px, ' + coords.y + 'px, 0)';
+    }
+    tipRaf = false;
+  }
 
   function showTip(el, e) {
-    const raw = el.getAttribute('data-tip');
+    var raw = el.getAttribute('data-tip');
     if (!raw) return;
-    const parts = raw.split('|');
-    const body = parts[0].trim();
-    const src  = parts[1] ? parts[1].trim() : null;
-    const titleEl = el.querySelector('.kf-num, .stat-val') || null;
-    const titleText = titleEl ? titleEl.textContent.trim().slice(0,48) : '';
+    var parts = raw.split('|');
+    var body = parts[0].trim();
+    var src  = parts[1] ? parts[1].trim() : null;
+    var titleEl = el.querySelector('.kf-num, .stat-val') || null;
+    var titleText = titleEl ? titleEl.textContent.trim().slice(0,48) : '';
+
     tip.innerHTML =
-      (titleText ? `<div class="tip-title">${titleText}</div>` : '') +
-      `<div>${body}</div>` +
-      (src ? `<div class="tip-src">${src}</div>` : '');
-    positionTip(e);
-    clearTimeout(hideTimer);
+      (titleText ? '<div class="tip-title">' + titleText + '</div>' : '') +
+      '<div>' + body + '</div>' +
+      (src ? '<div class="tip-src">' + src + '</div>' : '');
+
+    // Apply viewport-relative CSS constraints before measuring dimensions to ensure correct layout reflow
+    var vw = window.innerWidth;
+    var tw = Math.min(260, vw - 32);
+    tip.style.maxWidth = tw + 'px';
+
+    // Set visibility to hidden during measurement phase to avoid a visual flash of unpositioned content
+    tip.style.visibility = 'hidden';
     tip.classList.add('show');
+
+    // Cache dimensions to eliminate offsetWidth/offsetHeight reads in high-frequency events
+    cachedWidth = tip.offsetWidth || tw;
+    cachedHeight = tip.offsetHeight || 120;
+
+    // Position synchronously to prevent pop-in on first frame
+    var initCoords = getCoords(e.clientX, e.clientY);
+    tip.style.transform = 'translate3d(' + initCoords.x + 'px, ' + initCoords.y + 'px, 0)';
+
+    tip.style.visibility = '';
+    clearTimeout(hideTimer);
   }
 
-  function positionTip(e) {
-    const vw=window.innerWidth, tw=Math.min(260,vw-32);
-    tip.style.maxWidth = tw+'px';
-    let x=e.clientX+14, y=e.clientY-10;
-    if (x+tw > vw-12) x=e.clientX-tw-14;
-    const th=tip.offsetHeight||120;
-    if (y+th > window.innerHeight-12) y=e.clientY-th-6;
-    tip.style.left=(x+window.scrollX)+'px';
-    tip.style.top=(y+window.scrollY)+'px';
-  }
+  document.addEventListener('mouseover', function(e) {
+    var el = e.target.closest('[data-tip]');
+    if (el) showTip(el, e);
+  });
 
-  document.addEventListener('mouseover', e => { const el=e.target.closest('[data-tip]'); if(el) showTip(el,e); });
-  document.addEventListener('mousemove', e => { if(!tip.classList.contains('show')) return; const el=e.target.closest('[data-tip]'); if(el) positionTip(e); });
-  document.addEventListener('mouseout',  e => { const el=e.target.closest('[data-tip]'); if(el&&!el.contains(e.relatedTarget)){clearTimeout(hideTimer);hideTimer=setTimeout(()=>tip.classList.remove('show'),120);} });
-  document.addEventListener('touchend',  e => {
-    const el=e.target.closest('[data-tip]');
-    if(el){e.preventDefault();if(tip.classList.contains('show')){tip.classList.remove('show');return;}showTip(el,{clientX:e.changedTouches[0].clientX,clientY:e.changedTouches[0].clientY});}
-    else tip.classList.remove('show');
+  document.addEventListener('mousemove', function(e) {
+    if (!tip.classList.contains('show')) return;
+
+    // Copy coordinates to local variables immediately to handle asynchronous event property recycling
+    lastX = e.clientX;
+    lastY = e.clientY;
+
+    if (!tipRaf) {
+      tipRaf = true;
+      requestAnimationFrame(tickPosition);
+    }
+  });
+
+  document.addEventListener('mouseout', function(e) {
+    var el = e.target.closest('[data-tip]');
+    if (el && !el.contains(e.relatedTarget)) {
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(function() {
+        tip.classList.remove('show');
+      }, 120);
+    }
+  });
+
+  document.addEventListener('touchend', function(e) {
+    var el = e.target.closest('[data-tip]');
+    if (el) {
+      e.preventDefault();
+      if (tip.classList.contains('show')) {
+        tip.classList.remove('show');
+        return;
+      }
+      var touch = e.changedTouches[0];
+      showTip(el, { clientX: touch.clientX, clientY: touch.clientY });
+    } else {
+      tip.classList.remove('show');
+    }
   });
 })();
 
