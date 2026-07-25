@@ -984,13 +984,23 @@ footer {
 
 /* ── CUSTOM TOOLTIP ── */
 .tip {
-  position: absolute; z-index: 9000;
+  /*
+    ⚡ Bolt Performance Optimization:
+    1. Using 'position: fixed' together with 'top: 0; left: 0' allows us to position the tooltip
+       relative to the viewport without triggering document layout recalculation or requiring scroll offsets.
+    2. 'will-change: transform' promotes the tooltip to its own GPU compositor layer, ensuring transitions and
+       translations bypass the CPU paint cycle and are executed entirely on the GPU.
+    3. Responsive width styling maintains compatibility with narrow mobile screens.
+  */
+  position: fixed; top: 0; left: 0; z-index: 9000;
   background: var(--surface); color: var(--text);
   border: 1px solid var(--border2);
   box-shadow: 0 4px 16px rgba(0,0,0,.12);
   padding: 10px 14px; max-width: 260px;
+  width: calc(100vw - 32px);
   font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; line-height: 1.62;
   pointer-events: none; opacity: 0; transition: opacity .18s ease;
+  will-change: transform;
 }
 .tip.show { opacity: 1; }
 .tip-title { font-weight: 700; color: var(--navy); margin-bottom: 5px; font-size: 11px; }
@@ -3544,46 +3554,136 @@ function downloadPDF() {
 
 /* ─── UNIVERSAL TOOLTIP ENGINE ───────────────────────────── */
 (function() {
-  const tip = document.createElement('div');
+  var tip = document.createElement('div');
   tip.className = 'tip'; tip.id = 'globalTip';
   document.body.appendChild(tip);
-  let hideTimer = null;
+  var hideTimer = null;
+
+  /*
+    ⚡ Bolt Performance Optimization:
+    - GPU layer promotion ('will-change: transform', 'position: fixed') allows layout-free positioning via GPU.
+    - Dimension caching ('cachedWidth', 'cachedHeight') avoids layout thrashing / read-write-read cycles on high-frequency mousemove events.
+    - Frame throttling ('requestAnimationFrame') gates DOM writes to match the display refresh rate (e.g. 60Hz), preventing redundant positioning calculations.
+    - Synchronous first-frame positioning under 'visibility: hidden' prevents coordinate flicker or pop-in before the tooltip is made visible.
+  */
+  var cachedWidth = 0;
+  var cachedHeight = 0;
+  var tipRaf = false;
+  var lastX = 0;
+  var lastY = 0;
 
   function showTip(el, e) {
-    const raw = el.getAttribute('data-tip');
+    var raw = el.getAttribute('data-tip');
     if (!raw) return;
-    const parts = raw.split('|');
-    const body = parts[0].trim();
-    const src  = parts[1] ? parts[1].trim() : null;
-    const titleEl = el.querySelector('.kf-num, .stat-val') || null;
-    const titleText = titleEl ? titleEl.textContent.trim().slice(0,48) : '';
+    var parts = raw.split('|');
+    var body = parts[0].trim();
+    var src  = parts[1] ? parts[1].trim() : null;
+    var titleEl = el.querySelector('.kf-num, .stat-val') || null;
+    var titleText = titleEl ? titleEl.textContent.trim().slice(0,48) : '';
     tip.innerHTML =
-      (titleText ? `<div class="tip-title">${titleText}</div>` : '') +
-      `<div>${body}</div>` +
-      (src ? `<div class="tip-src">${src}</div>` : '');
-    positionTip(e);
+      (titleText ? '<div class="tip-title">' + titleText + '</div>' : '') +
+      '<div>' + body + '</div>' +
+      (src ? '<div class="tip-src">' + src + '</div>' : '');
+
+    // ⚡ Bolt: Cache dimensions under visibility: hidden to prevent pop-in / coordinate flicker
+    // Applying viewport-relative CSS constraints like maxWidth before measurement is important to handle responsive reflow correctly.
+    var vw = window.innerWidth;
+    var maxW = Math.min(260, vw - 32);
+    tip.style.maxWidth = maxW + 'px';
+
+    tip.style.visibility = 'hidden';
+    tip.style.display = 'block';
+
+    // Using tip.offsetWidth || maxW ensures the actual rendered width is measured for narrow tooltips
+    cachedWidth = tip.offsetWidth || maxW;
+    cachedHeight = tip.offsetHeight || 120;
+
+    // Position synchronously for the first frame to avoid pop-in/flicker
+    var clientX = e.clientX;
+    var clientY = e.clientY;
+    lastX = clientX;
+    lastY = clientY;
+
+    var x = clientX + 14;
+    var y = clientY - 10;
+    if (x + cachedWidth > vw - 12) {
+      x = clientX - cachedWidth - 14;
+    }
+    var vh = window.innerHeight;
+    if (y + cachedHeight > vh - 12) {
+      y = clientY - cachedHeight - 6;
+    }
+
+    // ⚡ Bolt: Apply synchronous initial position using translate3d before showing
+    tip.style.transform = 'translate3d(' + x + 'px, ' + y + 'px, 0)';
+    tip.style.visibility = '';
+
     clearTimeout(hideTimer);
     tip.classList.add('show');
   }
 
-  function positionTip(e) {
-    const vw=window.innerWidth, tw=Math.min(260,vw-32);
-    tip.style.maxWidth = tw+'px';
-    let x=e.clientX+14, y=e.clientY-10;
-    if (x+tw > vw-12) x=e.clientX-tw-14;
-    const th=tip.offsetHeight||120;
-    if (y+th > window.innerHeight-12) y=e.clientY-th-6;
-    tip.style.left=(x+window.scrollX)+'px';
-    tip.style.top=(y+window.scrollY)+'px';
+  function updateTipPosition() {
+    if (!tip.classList.contains('show')) {
+      tipRaf = false;
+      return;
+    }
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+    var x = lastX + 14;
+    var y = lastY - 10;
+    if (x + cachedWidth > vw - 12) {
+      x = lastX - cachedWidth - 14;
+    }
+    if (y + cachedHeight > vh - 12) {
+      y = lastY - cachedHeight - 6;
+    }
+    tip.style.transform = 'translate3d(' + x + 'px, ' + y + 'px, 0)';
+    tipRaf = false;
   }
 
-  document.addEventListener('mouseover', e => { const el=e.target.closest('[data-tip]'); if(el) showTip(el,e); });
-  document.addEventListener('mousemove', e => { if(!tip.classList.contains('show')) return; const el=e.target.closest('[data-tip]'); if(el) positionTip(e); });
-  document.addEventListener('mouseout',  e => { const el=e.target.closest('[data-tip]'); if(el&&!el.contains(e.relatedTarget)){clearTimeout(hideTimer);hideTimer=setTimeout(()=>tip.classList.remove('show'),120);} });
-  document.addEventListener('touchend',  e => {
-    const el=e.target.closest('[data-tip]');
-    if(el){e.preventDefault();if(tip.classList.contains('show')){tip.classList.remove('show');return;}showTip(el,{clientX:e.changedTouches[0].clientX,clientY:e.changedTouches[0].clientY});}
-    else tip.classList.remove('show');
+  document.addEventListener('mouseover', function(e) {
+    var el = e.target.closest('[data-tip]');
+    if (el) showTip(el, e);
+  });
+
+  document.addEventListener('mousemove', function(e) {
+    if (!tip.classList.contains('show')) return;
+
+    // ⚡ Bolt: Copy high-frequency event coordinates into local variables before RAF callback to prevent event object recycling issues
+    lastX = e.clientX;
+    lastY = e.clientY;
+
+    if (!tipRaf) {
+      tipRaf = true;
+      requestAnimationFrame(updateTipPosition);
+    }
+  });
+
+  document.addEventListener('mouseout', function(e) {
+    var el = e.target.closest('[data-tip]');
+    if (el && !el.contains(e.relatedTarget)) {
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(function() {
+        tip.classList.remove('show');
+      }, 120);
+    }
+  });
+
+  document.addEventListener('touchend', function(e) {
+    var el = e.target.closest('[data-tip]');
+    if (el) {
+      e.preventDefault();
+      if (tip.classList.contains('show')) {
+        tip.classList.remove('show');
+        return;
+      }
+      showTip(el, {
+        clientX: e.changedTouches[0].clientX,
+        clientY: e.changedTouches[0].clientY
+      });
+    } else {
+      tip.classList.remove('show');
+    }
   });
 })();
 
