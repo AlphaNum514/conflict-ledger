@@ -3141,8 +3141,20 @@ body.show-research .nav-progress { display: block; }
     requestAnimationFrame(updateScroll);
   }, { passive: true });
 
+  /*
+    Debouncing the `resize` event listener with a 150ms delay prevents redundant and expensive
+    layout calculations (via window.refreshOffsets) from running synchronously on every single frame
+    during an active window resize. This eliminates severe layout thrashing, reduces frame drops,
+    and keeps the main thread free for a smoother user interface experience.
+  */
+  var resizeTimeout;
   window.addEventListener('resize', function() {
-    window.refreshOffsets();
+    if (resizeTimeout) {
+      clearTimeout(resizeTimeout);
+    }
+    resizeTimeout = setTimeout(function() {
+      window.refreshOffsets();
+    }, 150);
   });
 
   // Initial call
