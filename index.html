@@ -3141,8 +3141,20 @@ body.show-research .nav-progress { display: block; }
     requestAnimationFrame(updateScroll);
   }, { passive: true });
 
+  /*
+    ⚡ Bolt Performance Optimization:
+    Debounce the window resize event using a 150ms timeout.
+    Window resizing fires events at an extremely high rate. Calling `window.refreshOffsets()`
+    on every event causes severe layout thrashing because it accesses layout properties (like
+    `offsetTop` and `scrollHeight`) synchronously. Debouncing by 150ms avoids redundant layout
+    recalculations and ensures high responsiveness and smooth UI performance during active resizing.
+  */
+  var resizeTimeout;
   window.addEventListener('resize', function() {
-    window.refreshOffsets();
+    if (resizeTimeout) clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(function() {
+      window.refreshOffsets();
+    }, 150);
   });
 
   // Initial call
