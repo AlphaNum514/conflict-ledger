@@ -3141,8 +3141,21 @@ body.show-research .nav-progress { display: block; }
     requestAnimationFrame(updateScroll);
   }, { passive: true });
 
+  /*
+    ⚡ Bolt Performance Optimization:
+    Debounce the 'resize' event listener using a 150ms setTimeout timer.
+    Since `window.refreshOffsets()` reads layout-sensitive properties like `offsetTop` and `scrollHeight`
+    within a loop for multiple section elements, calling it synchronously on every single high-frequency
+    resize event frame causes massive layout thrashing and severe frame drops.
+    By debouncing the callback, we ensure that layout values are only recalculated 150ms after the user
+    stops active resizing, keeping viewport resizing fast and fluid.
+  */
+  var resizeTimer;
   window.addEventListener('resize', function() {
-    window.refreshOffsets();
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function() {
+      window.refreshOffsets();
+    }, 150);
   });
 
   // Initial call
