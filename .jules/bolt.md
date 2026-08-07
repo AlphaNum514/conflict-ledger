@@ -1,3 +1,7 @@
 ## 2026-06-25 - Layout Thrashing in Scroll Listeners
 **Learning:** Accessing `offsetTop` or `scrollHeight` inside high-frequency scroll events without throttling causes "layout thrashing" because the browser must synchronously recalculate the layout before returning the value. In single-page apps with many sections, this significantly impacts scroll performance.
 **Action:** Always cache layout-sensitive values (like section offsets) in a variable and only update them when the layout actually changes (resize, view switch, content expansion). Use `requestAnimationFrame` to batch any DOM writes (like updating progress bars or classes) to ensure they happen at the start of the next frame.
+
+## 2026-08-07 - Tooltip Layout Thrashing & Test Synchronizability
+**Learning:** Querying `offsetHeight`/`offsetWidth` inside 60fps `mousemove` handlers triggers severe layout thrashing. Caching dimensions on trigger hover and using `position: fixed` with GPU-promoted `translate3d` transforms avoids layout & paint passes. Additionally, using `visibility: hidden` alongside `opacity: 0` allows reading accurate dimensions of the invisible tooltip in-place without causing coordinate pop-in, while perfectly aligning with Playwright's visibility assertions.
+**Action:** Always cache tooltip/popup dimensions during the content change phase (e.g. hover enter) and use `requestAnimationFrame` to throttle mouse movement transforms. Pair `visibility: hidden` with `opacity: 0` to support both seamless layout measurements and correct automated test detection of hidden elements.

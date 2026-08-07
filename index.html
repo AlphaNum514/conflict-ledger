@@ -983,16 +983,28 @@ footer {
 .pdf-btn svg { width: 12px; height: 12px; flex-shrink: 0; }
 
 /* ── CUSTOM TOOLTIP ── */
+/*
+   ⚡ Bolt Performance Optimization:
+   GPU Layer Promotion & Test Synchronizability:
+   1. Using `position: fixed` along with `top: 0; left: 0;` establishes a viewport-relative
+      coordinate space so transform coordinates are relative to the viewport origin.
+   2. `will-change: transform` promotes the tooltip to its own GPU compositor layer,
+      eliminating paint/layout thrashing during animations/tracking.
+   3. `visibility: hidden` works in tandem with `opacity: 0` to ensure that
+      automated tests (like Playwright assertions) correctly verify when the tooltip is hidden.
+*/
 .tip {
-  position: absolute; z-index: 9000;
+  position: fixed; top: 0; left: 0; z-index: 9000;
   background: var(--surface); color: var(--text);
   border: 1px solid var(--border2);
   box-shadow: 0 4px 16px rgba(0,0,0,.12);
   padding: 10px 14px; max-width: 260px;
   font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; line-height: 1.62;
-  pointer-events: none; opacity: 0; transition: opacity .18s ease;
+  pointer-events: none; opacity: 0; visibility: hidden;
+  transition: opacity .18s ease, visibility .18s ease;
+  will-change: transform;
 }
-.tip.show { opacity: 1; }
+.tip.show { opacity: 1; visibility: visible; }
 .tip-title { font-weight: 700; color: var(--navy); margin-bottom: 5px; font-size: 11px; }
 .tip-src { font-size: 8.5px; color: var(--muted2); margin-top: 6px; border-top: 1px solid var(--border); padding-top: 5px; }
 
@@ -3549,6 +3561,44 @@ function downloadPDF() {
   document.body.appendChild(tip);
   let hideTimer = null;
 
+  // Cache tooltip dimensions to eliminate high-frequency layout reads
+  let cachedWidth = 0;
+  let cachedHeight = 0;
+  let lastX = 0;
+  let lastY = 0;
+  let tipRaf = false;
+
+  /*
+    ⚡ Bolt Performance Optimization:
+    GPU-Accelerated Coordinate Application:
+    This function computes tooltip coordinates and applies a transform on a fixed element.
+    Using `translate3d()` promotes position updates to a compositor-only layer handled by the GPU,
+    avoiding costly layout recalculations and repaint passes on every cursor movement.
+  */
+  function updatePosition() {
+    let x = lastX + 14;
+    let y = lastY - 10;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    if (x + cachedWidth > vw - 12) {
+      x = lastX - cachedWidth - 14;
+    }
+    if (y + cachedHeight > vh - 12) {
+      y = lastY - cachedHeight - 6;
+    }
+
+    tip.style.transform = 'translate3d(' + x + 'px, ' + y + 'px, 0)';
+  }
+
+  /*
+    ⚡ Bolt Performance Optimization:
+    Dimension Caching & Coordinate Synchronization:
+    By caching layout measurements (`offsetWidth` and `offsetHeight`) once per trigger hover
+    (inside `showTip`) rather than querying them inside the 60fps mousemove listener, we
+    completely eliminate layout thrashing. Synchronously applying coordinates before showing
+    prevents any visual flicker or "pop-in" effect.
+  */
   function showTip(el, e) {
     const raw = el.getAttribute('data-tip');
     if (!raw) return;
@@ -3561,24 +3611,46 @@ function downloadPDF() {
       (titleText ? `<div class="tip-title">${titleText}</div>` : '') +
       `<div>${body}</div>` +
       (src ? `<div class="tip-src">${src}</div>` : '');
-    positionTip(e);
+
+    const vw = window.innerWidth;
+    const tw = Math.min(260, vw - 32);
+    tip.style.maxWidth = tw + 'px';
+
+    // Dimension Caching: Read offset dimensions once when content is populated
+    cachedWidth = tip.offsetWidth || tw;
+    cachedHeight = tip.offsetHeight || 120;
+
+    // Apply coordinate calculation immediately before transition to prevent flicker
+    lastX = e.clientX;
+    lastY = e.clientY;
+    updatePosition();
+
     clearTimeout(hideTimer);
     tip.classList.add('show');
   }
 
-  function positionTip(e) {
-    const vw=window.innerWidth, tw=Math.min(260,vw-32);
-    tip.style.maxWidth = tw+'px';
-    let x=e.clientX+14, y=e.clientY-10;
-    if (x+tw > vw-12) x=e.clientX-tw-14;
-    const th=tip.offsetHeight||120;
-    if (y+th > window.innerHeight-12) y=e.clientY-th-6;
-    tip.style.left=(x+window.scrollX)+'px';
-    tip.style.top=(y+window.scrollY)+'px';
-  }
-
   document.addEventListener('mouseover', e => { const el=e.target.closest('[data-tip]'); if(el) showTip(el,e); });
-  document.addEventListener('mousemove', e => { if(!tip.classList.contains('show')) return; const el=e.target.closest('[data-tip]'); if(el) positionTip(e); });
+
+  /*
+    ⚡ Bolt Performance Optimization:
+    Frame Throttling via requestAnimationFrame:
+    High-frequency mouse movements are throttled to 60fps (or display refresh rate)
+    via a requestAnimationFrame gate. Storing coordinates to local variables avoids closure-based
+    de-optimizations, keeping the main thread free.
+  */
+  document.addEventListener('mousemove', e => {
+    if (!tip.classList.contains('show')) return;
+    lastX = e.clientX;
+    lastY = e.clientY;
+    if (!tipRaf) {
+      tipRaf = true;
+      requestAnimationFrame(function() {
+        updatePosition();
+        tipRaf = false;
+      });
+    }
+  });
+
   document.addEventListener('mouseout',  e => { const el=e.target.closest('[data-tip]'); if(el&&!el.contains(e.relatedTarget)){clearTimeout(hideTimer);hideTimer=setTimeout(()=>tip.classList.remove('show'),120);} });
   document.addEventListener('touchend',  e => {
     const el=e.target.closest('[data-tip]');
