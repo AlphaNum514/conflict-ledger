@@ -984,11 +984,22 @@ footer {
 
 /* ── CUSTOM TOOLTIP ── */
 .tip {
-  position: absolute; z-index: 9000;
+  /*
+     ⚡ Bolt Optimization: GPU Layer Promotion & Responsive Bounds
+     Changing position to fixed with top:0/left:0 and will-change: transform
+     promotes the tooltip to its own compositor layer. This offloads positioning
+     calculations entirely to the GPU, avoiding expensive browser layout and paint
+     recalculations on mouse move. The width and max-width settings prevent layout
+     overflow on narrow screens.
+  */
+  position: fixed; top: 0; left: 0; z-index: 9000;
+  will-change: transform;
   background: var(--surface); color: var(--text);
   border: 1px solid var(--border2);
   box-shadow: 0 4px 16px rgba(0,0,0,.12);
-  padding: 10px 14px; max-width: 260px;
+  padding: 10px 14px;
+  width: calc(100vw - 32px);
+  max-width: 260px;
   font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; line-height: 1.62;
   pointer-events: none; opacity: 0; transition: opacity .18s ease;
 }
@@ -3549,6 +3560,19 @@ function downloadPDF() {
   document.body.appendChild(tip);
   let hideTimer = null;
 
+  /*
+     ⚡ Bolt Optimization: Dimension Cache & Frame Throttling State
+     By caching width and height bounds synchronously during showTip, we completely
+     eliminate offsetWidth/offsetHeight layout thrashing during mouse movement.
+     We also use a requestAnimationFrame gate with tipRaf to throttle mouse tracking to
+     the screen's refresh rate.
+  */
+  let cachedW = 0;
+  let cachedH = 0;
+  let tipRaf = false;
+  let lastX = 0;
+  let lastY = 0;
+
   function showTip(el, e) {
     const raw = el.getAttribute('data-tip');
     if (!raw) return;
@@ -3561,24 +3585,72 @@ function downloadPDF() {
       (titleText ? `<div class="tip-title">${titleText}</div>` : '') +
       `<div>${body}</div>` +
       (src ? `<div class="tip-src">${src}</div>` : '');
-    positionTip(e);
-    clearTimeout(hideTimer);
+
+    /*
+       ⚡ Bolt Optimization: Synchronous Measurement & Flicker Prevention
+       We use visibility: hidden while adding the class 'show' to safely measure the
+       dimensions in the layout, caching them to avoid any layout thrashing.
+       We then apply translate3d positioning synchronously before clearing visibility,
+       ensuring zero coordinate flicker or 'pop-in' on the first frame of display.
+    */
+    tip.style.visibility = 'hidden';
     tip.classList.add('show');
+
+    const vw = window.innerWidth;
+    const tw = Math.min(260, vw - 32);
+    cachedW = tip.offsetWidth || tw;
+    cachedH = tip.offsetHeight || 120;
+
+    let x = e.clientX + 14;
+    let y = e.clientY - 10;
+    if (x + cachedW > vw - 12) x = e.clientX - cachedW - 14;
+    if (y + cachedH > window.innerHeight - 12) y = e.clientY - cachedH - 6;
+
+    tip.style.transform = 'translate3d(' + x + 'px, ' + y + 'px, 0)';
+    tip.style.visibility = '';
+
+    clearTimeout(hideTimer);
   }
 
-  function positionTip(e) {
-    const vw=window.innerWidth, tw=Math.min(260,vw-32);
-    tip.style.maxWidth = tw+'px';
-    let x=e.clientX+14, y=e.clientY-10;
-    if (x+tw > vw-12) x=e.clientX-tw-14;
-    const th=tip.offsetHeight||120;
-    if (y+th > window.innerHeight-12) y=e.clientY-th-6;
-    tip.style.left=(x+window.scrollX)+'px';
-    tip.style.top=(y+window.scrollY)+'px';
+  function updateTipPosition() {
+    if (!tip.classList.contains('show')) {
+      tipRaf = false;
+      return;
+    }
+
+    const vw = window.innerWidth;
+    let x = lastX + 14;
+    let y = lastY - 10;
+    if (x + cachedW > vw - 12) x = lastX - cachedW - 14;
+    if (y + cachedH > window.innerHeight - 12) y = lastY - cachedH - 6;
+
+    // GPU-accelerated layout-free coordinate update
+    tip.style.transform = 'translate3d(' + x + 'px, ' + y + 'px, 0)';
+
+    tipRaf = false;
   }
 
   document.addEventListener('mouseover', e => { const el=e.target.closest('[data-tip]'); if(el) showTip(el,e); });
-  document.addEventListener('mousemove', e => { if(!tip.classList.contains('show')) return; const el=e.target.closest('[data-tip]'); if(el) positionTip(e); });
+
+  /*
+     ⚡ Bolt Optimization: Throttled Tracking & Redundant Lookup Prevention
+     By caching the coordinates on mousemove and throttling via requestAnimationFrame,
+     we match screen refresh rates perfectly. Additionally, when the tooltip is visible,
+     we bypass expensive closest('[data-tip]') DOM queries since active tracking is already confirmed.
+  */
+  document.addEventListener('mousemove', e => {
+    if (!tip.classList.contains('show')) return;
+
+    // Prevent event property recycling bugs by copying to local scope
+    lastX = e.clientX;
+    lastY = e.clientY;
+
+    if (!tipRaf) {
+      tipRaf = true;
+      requestAnimationFrame(updateTipPosition);
+    }
+  });
+
   document.addEventListener('mouseout',  e => { const el=e.target.closest('[data-tip]'); if(el&&!el.contains(e.relatedTarget)){clearTimeout(hideTimer);hideTimer=setTimeout(()=>tip.classList.remove('show'),120);} });
   document.addEventListener('touchend',  e => {
     const el=e.target.closest('[data-tip]');
