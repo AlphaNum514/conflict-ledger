@@ -984,13 +984,14 @@ footer {
 
 /* ── CUSTOM TOOLTIP ── */
 .tip {
-  position: absolute; z-index: 9000;
+  position: fixed; z-index: 9000; top: 0; left: 0;
   background: var(--surface); color: var(--text);
   border: 1px solid var(--border2);
   box-shadow: 0 4px 16px rgba(0,0,0,.12);
   padding: 10px 14px; max-width: 260px;
   font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; line-height: 1.62;
   pointer-events: none; opacity: 0; transition: opacity .18s ease;
+  will-change: transform;
 }
 .tip.show { opacity: 1; }
 .tip-title { font-weight: 700; color: var(--navy); margin-bottom: 5px; font-size: 11px; }
@@ -3547,7 +3548,7 @@ function downloadPDF() {
   const tip = document.createElement('div');
   tip.className = 'tip'; tip.id = 'globalTip';
   document.body.appendChild(tip);
-  let hideTimer = null;
+  let hideTimer = null, cachedW = 0, cachedH = 0;
 
   function showTip(el, e) {
     const raw = el.getAttribute('data-tip');
@@ -3561,9 +3562,16 @@ function downloadPDF() {
       (titleText ? `<div class="tip-title">${titleText}</div>` : '') +
       `<div>${body}</div>` +
       (src ? `<div class="tip-src">${src}</div>` : '');
+
+    // Get dimensions once per show to prevent layout thrashing on move
+    tip.style.visibility = 'hidden';
+    tip.classList.add('show');
+    cachedW = tip.offsetWidth;
+    cachedH = tip.offsetHeight;
+    tip.style.visibility = '';
+
     positionTip(e);
     clearTimeout(hideTimer);
-    tip.classList.add('show');
   }
 
   function positionTip(e) {
@@ -3571,14 +3579,22 @@ function downloadPDF() {
     tip.style.maxWidth = tw+'px';
     let x=e.clientX+14, y=e.clientY-10;
     if (x+tw > vw-12) x=e.clientX-tw-14;
-    const th=tip.offsetHeight||120;
+    const th=cachedH||120;
     if (y+th > window.innerHeight-12) y=e.clientY-th-6;
-    tip.style.left=(x+window.scrollX)+'px';
-    tip.style.top=(y+window.scrollY)+'px';
+    tip.style.transform=`translate3d(${x}px, ${y}px, 0)`;
   }
 
+  let rafPending = false;
   document.addEventListener('mouseover', e => { const el=e.target.closest('[data-tip]'); if(el) showTip(el,e); });
-  document.addEventListener('mousemove', e => { if(!tip.classList.contains('show')) return; const el=e.target.closest('[data-tip]'); if(el) positionTip(e); });
+  document.addEventListener('mousemove', e => {
+    if(!tip.classList.contains('show') || rafPending) return;
+    rafPending = true;
+    const cx = e.clientX, cy = e.clientY;
+    requestAnimationFrame(() => {
+      positionTip({clientX: cx, clientY: cy});
+      rafPending = false;
+    });
+  }, { passive: true });
   document.addEventListener('mouseout',  e => { const el=e.target.closest('[data-tip]'); if(el&&!el.contains(e.relatedTarget)){clearTimeout(hideTimer);hideTimer=setTimeout(()=>tip.classList.remove('show'),120);} });
   document.addEventListener('touchend',  e => {
     const el=e.target.closest('[data-tip]');
