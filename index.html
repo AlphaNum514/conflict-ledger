@@ -984,13 +984,14 @@ footer {
 
 /* ── CUSTOM TOOLTIP ── */
 .tip {
-  position: absolute; z-index: 9000;
+  position: fixed; top: 0; left: 0; z-index: 9000;
   background: var(--surface); color: var(--text);
   border: 1px solid var(--border2);
   box-shadow: 0 4px 16px rgba(0,0,0,.12);
-  padding: 10px 14px; max-width: 260px;
+  padding: 10px 14px; max-width: min(260px, calc(100vw - 32px));
   font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; line-height: 1.62;
   pointer-events: none; opacity: 0; transition: opacity .18s ease;
+  will-change: transform;
 }
 .tip.show { opacity: 1; }
 .tip-title { font-weight: 700; color: var(--navy); margin-bottom: 5px; font-size: 11px; }
@@ -3548,6 +3549,8 @@ function downloadPDF() {
   tip.className = 'tip'; tip.id = 'globalTip';
   document.body.appendChild(tip);
   let hideTimer = null;
+  let rafPending = false;
+  let cw = 0, ch = 0; // Cached dimensions
 
   function showTip(el, e) {
     const raw = el.getAttribute('data-tip');
@@ -3561,29 +3564,61 @@ function downloadPDF() {
       (titleText ? `<div class="tip-title">${titleText}</div>` : '') +
       `<div>${body}</div>` +
       (src ? `<div class="tip-src">${src}</div>` : '');
+
+    // Cache dimensions to avoid layout thrashing on move
+    cw = tip.offsetWidth || 260;
+    ch = tip.offsetHeight || 120;
+
     positionTip(e);
     clearTimeout(hideTimer);
     tip.classList.add('show');
   }
 
   function positionTip(e) {
-    const vw=window.innerWidth, tw=Math.min(260,vw-32);
-    tip.style.maxWidth = tw+'px';
-    let x=e.clientX+14, y=e.clientY-10;
-    if (x+tw > vw-12) x=e.clientX-tw-14;
-    const th=tip.offsetHeight||120;
-    if (y+th > window.innerHeight-12) y=e.clientY-th-6;
-    tip.style.left=(x+window.scrollX)+'px';
-    tip.style.top=(y+window.scrollY)+'px';
+    const vw = window.innerWidth, vh = window.innerHeight;
+    let x = e.clientX + 14, y = e.clientY - 10;
+    if (x + cw > vw - 12) x = e.clientX - cw - 14;
+    if (y + ch > vh - 12) y = e.clientY - ch - 6;
+
+    // Use translate3d for GPU-accelerated positioning
+    tip.style.transform = `translate3d(${x}px, ${y}px, 0)`;
   }
 
-  document.addEventListener('mouseover', e => { const el=e.target.closest('[data-tip]'); if(el) showTip(el,e); });
-  document.addEventListener('mousemove', e => { if(!tip.classList.contains('show')) return; const el=e.target.closest('[data-tip]'); if(el) positionTip(e); });
-  document.addEventListener('mouseout',  e => { const el=e.target.closest('[data-tip]'); if(el&&!el.contains(e.relatedTarget)){clearTimeout(hideTimer);hideTimer=setTimeout(()=>tip.classList.remove('show'),120);} });
+  document.addEventListener('mouseover', e => {
+    const el = e.target.closest('[data-tip]');
+    if (el) showTip(el, e);
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (!tip.classList.contains('show') || rafPending) return;
+    rafPending = true;
+    const cx = e.clientX, cy = e.clientY;
+    requestAnimationFrame(() => {
+      positionTip({ clientX: cx, clientY: cy });
+      rafPending = false;
+    });
+  }, { passive: true });
+
+  document.addEventListener('mouseout',  e => {
+    const el = e.target.closest('[data-tip]');
+    if (el && !el.contains(e.relatedTarget)) {
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => tip.classList.remove('show'), 120);
+    }
+  });
+
   document.addEventListener('touchend',  e => {
-    const el=e.target.closest('[data-tip]');
-    if(el){e.preventDefault();if(tip.classList.contains('show')){tip.classList.remove('show');return;}showTip(el,{clientX:e.changedTouches[0].clientX,clientY:e.changedTouches[0].clientY});}
-    else tip.classList.remove('show');
+    const el = e.target.closest('[data-tip]');
+    if (el) {
+      e.preventDefault();
+      if (tip.classList.contains('show')) {
+        tip.classList.remove('show');
+        return;
+      }
+      showTip(el, { clientX: e.changedTouches[0].clientX, clientY: e.changedTouches[0].clientY });
+    } else {
+      tip.classList.remove('show');
+    }
   });
 })();
 
