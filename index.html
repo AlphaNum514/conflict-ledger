@@ -3515,18 +3515,42 @@ const bObs = new IntersectionObserver(entries => { entries.forEach(e=>{ if(e.isI
 document.querySelectorAll('.cf-bar-fill').forEach(el=>bObs.observe(el));
 
 /* TABLE SORT */
+/*
+  ⚡ Bolt Performance Optimization: Pre-parsed Table Column Sorting
+  - Pre-parsed Sort Keys: Eliminates repeated DOM property reads (`cell.textContent`) and expensive string/regex operations
+    (`.replace(/[^-\d.]/g, '')`) inside the O(N log N) Array.prototype.sort comparator loop.
+  - Cached DOM Nodes: Pre-caches `ths` (header elements) and `rows` (tr elements) outside the sort loop to prevent layout thrashing and DOM traversals during sort operations.
+  - Batch Re-attachment: Appends sorted fragment rows back to tbody in a single pass after sorting array references.
+*/
 var _tblEl = document.getElementById('sectorTable');
 if (_tblEl) {
-const tbl=_tblEl, tbdy=tbl.querySelector('tbody');
-let sc=-1,sd=1;
-tbl.querySelectorAll('thead th').forEach((th,i)=>{
-  th.addEventListener('click',()=>{
-    sc===i?sd*=-1:(sc=i,sd=1);
-    tbl.querySelectorAll('thead th').forEach(t=>t.classList.remove('sort-asc','sort-desc'));
-    th.classList.add(sd===1?'sort-asc':'sort-desc');
-    Array.from(tbdy.querySelectorAll('tr')).sort((a,b)=>{const av=a.cells[i].textContent.trim(),bv=b.cells[i].textContent.trim(),an=parseFloat(av.replace(/[^-\d.]/g,'')),bn=parseFloat(bv.replace(/[^-\d.]/g,''));return(!isNaN(an)&&!isNaN(bn))?(an-bn)*sd:av.localeCompare(bv)*sd;}).forEach(r=>tbdy.appendChild(r));
+  const tbl = _tblEl, tbdy = tbl.querySelector('tbody'), ths = tbl.querySelectorAll('thead th');
+  let sc = -1, sd = 1;
+  ths.forEach((th, i) => {
+    th.addEventListener('click', () => {
+      sc === i ? sd *= -1 : (sc = i, sd = 1);
+      ths.forEach(t => t.classList.remove('sort-asc', 'sort-desc'));
+      th.classList.add(sd === 1 ? 'sort-asc' : 'sort-desc');
+
+      // Extract rows and pre-parse values before sorting to avoid DOM reads in O(N log N) comparator
+      const rows = Array.from(tbdy.querySelectorAll('tr'));
+      const items = rows.map(r => {
+        const text = r.cells[i].textContent.trim();
+        const num = parseFloat(text.replace(/[^-\d.]/g, ''));
+        return { row: r, text: text, num: isNaN(num) ? null : num };
+      });
+
+      items.sort((a, b) => {
+        if (a.num !== null && b.num !== null) {
+          return (a.num - b.num) * sd;
+        }
+        return a.text.localeCompare(b.text) * sd;
+      });
+
+      // Re-append sorted rows
+      items.forEach(item => tbdy.appendChild(item.row));
+    });
   });
-});
 }
 
 /* ─── PDF EXPORT — Safari-hardened ──────────────────────── */
