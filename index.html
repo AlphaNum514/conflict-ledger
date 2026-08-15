@@ -3515,18 +3515,42 @@ const bObs = new IntersectionObserver(entries => { entries.forEach(e=>{ if(e.isI
 document.querySelectorAll('.cf-bar-fill').forEach(el=>bObs.observe(el));
 
 /* TABLE SORT */
+/*
+  ⚡ Bolt Performance Optimization:
+  Pre-parse row cell text and numeric values into a temporary map array prior to sorting.
+  This avoids calling `textContent`, `.trim()`, and regex string parsing repeatedly
+  inside the O(N log N) comparator callback, reducing DOM property reads and regex evaluations to O(N).
+  Additionally, appending sorted rows via a DocumentFragment prevents multi-stage DOM layout recalculations.
+*/
 var _tblEl = document.getElementById('sectorTable');
 if (_tblEl) {
-const tbl=_tblEl, tbdy=tbl.querySelector('tbody');
-let sc=-1,sd=1;
-tbl.querySelectorAll('thead th').forEach((th,i)=>{
-  th.addEventListener('click',()=>{
-    sc===i?sd*=-1:(sc=i,sd=1);
-    tbl.querySelectorAll('thead th').forEach(t=>t.classList.remove('sort-asc','sort-desc'));
-    th.classList.add(sd===1?'sort-asc':'sort-desc');
-    Array.from(tbdy.querySelectorAll('tr')).sort((a,b)=>{const av=a.cells[i].textContent.trim(),bv=b.cells[i].textContent.trim(),an=parseFloat(av.replace(/[^-\d.]/g,'')),bn=parseFloat(bv.replace(/[^-\d.]/g,''));return(!isNaN(an)&&!isNaN(bn))?(an-bn)*sd:av.localeCompare(bv)*sd;}).forEach(r=>tbdy.appendChild(r));
+  var tbl = _tblEl, tbdy = tbl.querySelector('tbody');
+  var sc = -1, sd = 1;
+  tbl.querySelectorAll('thead th').forEach(function(th, i) {
+    th.addEventListener('click', function() {
+      sc === i ? sd *= -1 : (sc = i, sd = 1);
+      tbl.querySelectorAll('thead th').forEach(function(t) { t.classList.remove('sort-asc', 'sort-desc'); });
+      th.classList.add(sd === 1 ? 'sort-asc' : 'sort-desc');
+
+      var rows = Array.from(tbdy.querySelectorAll('tr'));
+      var mapped = rows.map(function(row) {
+        var str = row.cells[i] ? row.cells[i].textContent.trim() : '';
+        var num = parseFloat(str.replace(/[^-\d.]/g, ''));
+        return { row: row, str: str, num: isNaN(num) ? null : num };
+      });
+
+      mapped.sort(function(a, b) {
+        if (a.num !== null && b.num !== null) {
+          return (a.num - b.num) * sd;
+        }
+        return a.str.localeCompare(b.str) * sd;
+      });
+
+      var frag = document.createDocumentFragment();
+      mapped.forEach(function(item) { frag.appendChild(item.row); });
+      tbdy.appendChild(frag);
+    });
   });
-});
 }
 
 /* ─── PDF EXPORT — Safari-hardened ──────────────────────── */
