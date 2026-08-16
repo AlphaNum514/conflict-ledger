@@ -3156,8 +3156,18 @@ body.show-research .nav-progress { display: block; }
     requestAnimationFrame(updateScroll);
   }, { passive: true });
 
+  /*
+    ⚡ Bolt Performance Optimization:
+    Debouncing window.resize events prevents continuous layout thrashing (forced synchronous
+    reflows caused by window.refreshOffsets() reading offsetTop and scrollHeight) during fluid
+    window resizing. A 150ms delay balances real-time UI accuracy with smooth rendering performance.
+  */
+  var resizeTimer = null;
   window.addEventListener('resize', function() {
-    window.refreshOffsets();
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function() {
+      window.refreshOffsets();
+    }, 150);
   });
 
   // Initial call
