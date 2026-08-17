@@ -3156,8 +3156,19 @@ body.show-research .nav-progress { display: block; }
     requestAnimationFrame(updateScroll);
   }, { passive: true });
 
+  /*
+    ⚡ Bolt Performance Optimization:
+    Debounce high-frequency window resize events (150ms delay) to prevent layout thrashing.
+    During active window resizing, calling window.refreshOffsets() synchronously on every resize event
+    forces the browser to recalculate element layout (el.offsetTop) hundreds of times per second.
+    Debouncing ensures offsets are recalculated only once after resizing completes.
+  */
+  var resizeTimer = null;
   window.addEventListener('resize', function() {
-    window.refreshOffsets();
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function() {
+      window.refreshOffsets();
+    }, 150);
   });
 
   // Initial call
