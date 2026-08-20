@@ -3156,8 +3156,19 @@ body.show-research .nav-progress { display: block; }
     requestAnimationFrame(updateScroll);
   }, { passive: true });
 
+  /*
+    ⚡ Bolt Performance Optimization:
+    Debounce window resize event listener to prevent continuous layout thrashing.
+    Calling `refreshOffsets()` directly on every high-frequency resize event forces
+    repeated synchronous layout recalculations (reflows) via `offsetTop` and `scrollHeight`
+    property reads. Debouncing with a 150ms timer prevents frame drops during browser window resizing.
+  */
+  var resizeTimer;
   window.addEventListener('resize', function() {
-    window.refreshOffsets();
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function() {
+      window.refreshOffsets();
+    }, 150);
   });
 
   // Initial call
