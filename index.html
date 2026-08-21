@@ -3094,6 +3094,7 @@ body.show-research .nav-progress { display: block; }
   var maxScroll = 1;
   var rafPending = false;
   var lastActiveId = '';
+  var lastRoundedPct = -1;
 
   // Elements to update
   var progBarSimple, progBarRes, scrollTopBtn, navProgText, navLinkMap = {};
@@ -3122,8 +3123,16 @@ body.show-research .nav-progress { display: block; }
       if (!scrollTopBtn) scrollTopBtn = document.getElementById('scrollTop');
       if (scrollTopBtn) scrollTopBtn.classList.toggle('show', s > 400);
 
-      if (!navProgText) navProgText = document.getElementById('nav-progress');
-      if (navProgText) navProgText.textContent = Math.round(pct) + '% read';
+      /* ⚡ Bolt Performance Optimization:
+         Cache the rounded progress percentage so textContent is only updated when
+         the integer percentage changes, avoiding redundant DOM text node mutations
+         and string allocations on every frame during continuous scrolling. */
+      var roundedPct = Math.round(pct);
+      if (roundedPct !== lastRoundedPct) {
+        if (!navProgText) navProgText = document.getElementById('nav-progress');
+        if (navProgText) navProgText.textContent = roundedPct + '% read';
+        lastRoundedPct = roundedPct;
+      }
 
       // Navigation Highlighting
       var y = s + 130;
@@ -4110,6 +4119,24 @@ window.showScenario = function(name) {
   document.addEventListener('DOMContentLoaded', function() {
     var table = document.getElementById('sectorTable');
     if (!table) return;
+
+    /* ⚡ Bolt Performance Optimization:
+       Use a single shared IntersectionObserver instance for all table rows instead of
+       instantiating a new IntersectionObserver per row inside the loop. This reduces
+       observer object overhead and browser layout/intersection tracking cost. */
+    var sparkObs = new IntersectionObserver(function(entries) {
+      entries.forEach(function(e) {
+        if (e.isIntersecting) {
+          var rect = e.target._sparkRect;
+          var w = e.target._sparkWidth;
+          if (rect && w !== undefined) {
+            rect.setAttribute('width', String(w));
+          }
+          sparkObs.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.1 });
+
     table.querySelectorAll('tbody tr').forEach(function(row) {
       var retCell = row.querySelector('td:nth-child(2)');
       if (!retCell) return;
@@ -4136,14 +4163,10 @@ window.showScenario = function(name) {
       }
       spark.appendChild(rect);
       retCell.appendChild(spark);
-      // Animate bar
-      var obs = new IntersectionObserver(function(entries) {
-        if (entries[0].isIntersecting) {
-          rect.setAttribute('width', String(w));
-          obs.disconnect();
-        }
-      }, { threshold: 0.5 });
-      obs.observe(row);
+
+      row._sparkRect = rect;
+      row._sparkWidth = w;
+      sparkObs.observe(row);
     });
   });
 })();
