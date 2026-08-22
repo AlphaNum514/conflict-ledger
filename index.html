@@ -4107,6 +4107,21 @@ window.showScenario = function(name) {
 
 /* ── SECTOR TABLE — add inline color bars dynamically ─────── */
 (function() {
+  // Performance Optimization: Use a single shared IntersectionObserver instance
+  // instead of creating a new IntersectionObserver for every single row in the table.
+  // This avoids redundant O(N) observer allocations and memory overhead.
+  var sparkObs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        var row = entry.target;
+        if (row._sparkRect && row._sparkWidth) {
+          row._sparkRect.setAttribute('width', row._sparkWidth);
+        }
+        sparkObs.unobserve(row);
+      }
+    });
+  }, { threshold: 0.1 });
+
   document.addEventListener('DOMContentLoaded', function() {
     var table = document.getElementById('sectorTable');
     if (!table) return;
@@ -4136,14 +4151,9 @@ window.showScenario = function(name) {
       }
       spark.appendChild(rect);
       retCell.appendChild(spark);
-      // Animate bar
-      var obs = new IntersectionObserver(function(entries) {
-        if (entries[0].isIntersecting) {
-          rect.setAttribute('width', String(w));
-          obs.disconnect();
-        }
-      }, { threshold: 0.5 });
-      obs.observe(row);
+      row._sparkRect = rect;
+      row._sparkWidth = String(w);
+      sparkObs.observe(row);
     });
   });
 })();
