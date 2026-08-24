@@ -3094,6 +3094,7 @@ body.show-research .nav-progress { display: block; }
   var maxScroll = 1;
   var rafPending = false;
   var lastActiveId = '';
+  var lastRoundedPct = -1;
 
   // Elements to update
   var progBarSimple, progBarRes, scrollTopBtn, navProgText, navLinkMap = {};
@@ -3123,7 +3124,14 @@ body.show-research .nav-progress { display: block; }
       if (scrollTopBtn) scrollTopBtn.classList.toggle('show', s > 400);
 
       if (!navProgText) navProgText = document.getElementById('nav-progress');
-      if (navProgText) navProgText.textContent = Math.round(pct) + '% read';
+      // ⚡ Bolt Performance Optimization:
+      // Cache the rounded percentage to avoid redundant DOM text node mutations
+      // and string allocations on every scroll frame when the integer percentage hasn't changed.
+      var roundedPct = Math.round(pct);
+      if (roundedPct !== lastRoundedPct) {
+        if (navProgText) navProgText.textContent = roundedPct + '% read';
+        lastRoundedPct = roundedPct;
+      }
 
       // Navigation Highlighting
       var y = s + 130;
