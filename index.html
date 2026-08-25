@@ -3094,6 +3094,8 @@ body.show-research .nav-progress { display: block; }
   var maxScroll = 1;
   var rafPending = false;
   var lastActiveId = '';
+  // Optimization: Cache last rounded reading percentage to prevent redundant DOM text node mutations and string allocations on 60fps/120fps scroll frames
+  var lastRoundedPct = -1;
 
   // Elements to update
   var progBarSimple, progBarRes, scrollTopBtn, navProgText, navLinkMap = {};
@@ -3123,7 +3125,12 @@ body.show-research .nav-progress { display: block; }
       if (scrollTopBtn) scrollTopBtn.classList.toggle('show', s > 400);
 
       if (!navProgText) navProgText = document.getElementById('nav-progress');
-      if (navProgText) navProgText.textContent = Math.round(pct) + '% read';
+      // Performance Optimization: Cache rounded percentage to prevent redundant text content mutations and string allocations when percentage has not changed
+      var roundedPct = Math.round(pct);
+      if (roundedPct !== lastRoundedPct) {
+        lastRoundedPct = roundedPct;
+        if (navProgText) navProgText.textContent = roundedPct + '% read';
+      }
 
       // Navigation Highlighting
       var y = s + 130;
