@@ -4110,6 +4110,26 @@ window.showScenario = function(name) {
   document.addEventListener('DOMContentLoaded', function() {
     var table = document.getElementById('sectorTable');
     if (!table) return;
+    /*
+      ⚡ Bolt Performance Optimization:
+      Single Shared IntersectionObserver for Sector Table mini-sparks.
+      Instead of instantiating N distinct `IntersectionObserver` objects inside the `forEach` loop on table rows,
+      we use a single shared observer instance (`sparkObs`). We attach references for `_sparkRect` and `_sparkWidth`
+      to each row element. Upon intersection, the observer sets the target rect's width and unobserves the row.
+      This reduces observer overhead from O(N) to O(1) instance creation and saves memory.
+    */
+    var sparkObs = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          var row = entry.target;
+          if (row._sparkRect && row._sparkWidth !== undefined) {
+            row._sparkRect.setAttribute('width', String(row._sparkWidth));
+          }
+          sparkObs.unobserve(row);
+        }
+      });
+    }, { threshold: 0.1 });
+
     table.querySelectorAll('tbody tr').forEach(function(row) {
       var retCell = row.querySelector('td:nth-child(2)');
       if (!retCell) return;
@@ -4136,14 +4156,10 @@ window.showScenario = function(name) {
       }
       spark.appendChild(rect);
       retCell.appendChild(spark);
-      // Animate bar
-      var obs = new IntersectionObserver(function(entries) {
-        if (entries[0].isIntersecting) {
-          rect.setAttribute('width', String(w));
-          obs.disconnect();
-        }
-      }, { threshold: 0.5 });
-      obs.observe(row);
+
+      row._sparkRect = rect;
+      row._sparkWidth = w;
+      sparkObs.observe(row);
     });
   });
 })();
