@@ -4106,10 +4106,29 @@ window.showScenario = function(name) {
 };
 
 /* ── SECTOR TABLE — add inline color bars dynamically ─────── */
+/*
+  ⚡ Bolt Performance Optimization:
+  Use a single shared IntersectionObserver instance (`sparkObs`) for animating table row sparklines.
+  This avoids instantiating individual IntersectionObserver objects per row (O(N) allocations),
+  reducing garbage collection overhead and memory footprint while cleanly unobserving each row when triggered.
+*/
 (function() {
   document.addEventListener('DOMContentLoaded', function() {
     var table = document.getElementById('sectorTable');
     if (!table) return;
+
+    var sparkObs = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          var target = entry.target;
+          if (target._sparkRect && target._sparkWidth !== undefined) {
+            target._sparkRect.setAttribute('width', String(target._sparkWidth));
+          }
+          sparkObs.unobserve(target);
+        }
+      });
+    }, { threshold: 0.5 });
+
     table.querySelectorAll('tbody tr').forEach(function(row) {
       var retCell = row.querySelector('td:nth-child(2)');
       if (!retCell) return;
@@ -4136,14 +4155,10 @@ window.showScenario = function(name) {
       }
       spark.appendChild(rect);
       retCell.appendChild(spark);
-      // Animate bar
-      var obs = new IntersectionObserver(function(entries) {
-        if (entries[0].isIntersecting) {
-          rect.setAttribute('width', String(w));
-          obs.disconnect();
-        }
-      }, { threshold: 0.5 });
-      obs.observe(row);
+
+      row._sparkRect = rect;
+      row._sparkWidth = w;
+      sparkObs.observe(row);
     });
   });
 })();
