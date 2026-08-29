@@ -3156,8 +3156,13 @@ body.show-research .nav-progress { display: block; }
     requestAnimationFrame(updateScroll);
   }, { passive: true });
 
+  // Debounce resize handler to avoid layout thrashing (offsetTop/scrollHeight calls) on high-frequency resize events
+  var resizeTimer;
   window.addEventListener('resize', function() {
-    window.refreshOffsets();
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function() {
+      window.refreshOffsets();
+    }, 150);
   });
 
   // Initial call
