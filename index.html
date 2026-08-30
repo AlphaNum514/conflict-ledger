@@ -3156,8 +3156,14 @@ body.show-research .nav-progress { display: block; }
     requestAnimationFrame(updateScroll);
   }, { passive: true });
 
+  // Performance optimization: Debounce window resize listener to prevent layout thrashing and synchronous reflows
+  // on every resize tick. Debouncing by 150ms batches offset calculations until the user finishes resizing.
+  var resizeTimer;
   window.addEventListener('resize', function() {
-    window.refreshOffsets();
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function() {
+      if (window.refreshOffsets) window.refreshOffsets();
+    }, 150);
   });
 
   // Initial call
