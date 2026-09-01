@@ -3156,8 +3156,19 @@ body.show-research .nav-progress { display: block; }
     requestAnimationFrame(updateScroll);
   }, { passive: true });
 
+  // PERFORMANCE OPTIMIZATION: Debounce the resize event listener using a 150ms delay.
+  // This prevents layout thrashing caused by repeatedly calling window.refreshOffsets()
+  // synchronously on every frame during active window resizing. By deferring the
+  // calculations (which query multiple DOM offsetTop values and invalidate the layout cache),
+  // we improve browser responsiveness, avoid CPU spikes, and ensure frame rate stability.
+  var resizeTimeout;
   window.addEventListener('resize', function() {
-    window.refreshOffsets();
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(function() {
+      if (window.refreshOffsets) {
+        window.refreshOffsets();
+      }
+    }, 150);
   });
 
   // Initial call
