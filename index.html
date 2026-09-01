@@ -4110,7 +4110,30 @@ window.showScenario = function(name) {
   document.addEventListener('DOMContentLoaded', function() {
     var table = document.getElementById('sectorTable');
     if (!table) return;
-    table.querySelectorAll('tbody tr').forEach(function(row) {
+    var rows = table.querySelectorAll('tbody tr');
+    if (!rows.length) return;
+
+    /*
+      ⚡ Bolt Performance Optimization:
+      Use a single shared IntersectionObserver instance instead of creating O(N) observer instances
+      inside the loop for every table row. Attaching target rect and width references (`_sparkRect`, `_sparkWidth`)
+      to row elements eliminates unnecessary C++/JS binding overhead, reduces memory allocation, and lowers
+      garbage collection pressure on table initializations.
+    */
+    var sparkObs = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          var targetRect = entry.target._sparkRect;
+          var targetWidth = entry.target._sparkWidth;
+          if (targetRect) {
+            targetRect.setAttribute('width', String(targetWidth));
+          }
+          sparkObs.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    rows.forEach(function(row) {
       var retCell = row.querySelector('td:nth-child(2)');
       if (!retCell) return;
       var val = parseFloat(retCell.textContent.replace(/[^-\d.]/g, ''));
@@ -4136,14 +4159,11 @@ window.showScenario = function(name) {
       }
       spark.appendChild(rect);
       retCell.appendChild(spark);
-      // Animate bar
-      var obs = new IntersectionObserver(function(entries) {
-        if (entries[0].isIntersecting) {
-          rect.setAttribute('width', String(w));
-          obs.disconnect();
-        }
-      }, { threshold: 0.5 });
-      obs.observe(row);
+
+      // Store target references on row and observe with shared observer
+      row._sparkRect = rect;
+      row._sparkWidth = w;
+      sparkObs.observe(row);
     });
   });
 })();
