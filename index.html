@@ -3156,8 +3156,21 @@ body.show-research .nav-progress { display: block; }
     requestAnimationFrame(updateScroll);
   }, { passive: true });
 
+  /* PERFORMANCE OPTIMIZATION: Debounce the window resize event listener
+   * High-frequency window resize events otherwise trigger window.refreshOffsets()
+   * on every single frame, causing severe layout thrashing and synchronous reflows
+   * because it reads offsetTop, scrollHeight, and innerHeight.
+   * By debouncing with a 150ms timeout, we batch and delay the layout cache updates,
+   * significantly lowering CPU load and rendering overhead during active window resizing.
+   */
+  var resizeTimeout;
   window.addEventListener('resize', function() {
-    window.refreshOffsets();
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(function() {
+      if (window.refreshOffsets) {
+        window.refreshOffsets();
+      }
+    }, 150);
   });
 
   // Initial call
