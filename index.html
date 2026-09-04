@@ -4110,6 +4110,27 @@ window.showScenario = function(name) {
   document.addEventListener('DOMContentLoaded', function() {
     var table = document.getElementById('sectorTable');
     if (!table) return;
+
+    /*
+      ⚡ Bolt Performance Optimization:
+      Single Shared IntersectionObserver Instance:
+      Instead of creating a new IntersectionObserver instance for every table row inside the loop (O(N) observer allocations),
+      we use a single shared `sparkObs` instance created once before the loop.
+      Row target references (`_sparkRect`, `_sparkWidth`) are attached to each row element, allowing the single observer callback
+      to animate the bar width upon intersection and unobserve the target, reducing memory overhead and observer thrashing.
+    */
+    var sparkObs = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          var targetRow = entry.target;
+          if (targetRow._sparkRect && targetRow._sparkWidth !== undefined) {
+            targetRow._sparkRect.setAttribute('width', String(targetRow._sparkWidth));
+          }
+          sparkObs.unobserve(targetRow);
+        }
+      });
+    }, { threshold: 0.1 });
+
     table.querySelectorAll('tbody tr').forEach(function(row) {
       var retCell = row.querySelector('td:nth-child(2)');
       if (!retCell) return;
@@ -4136,14 +4157,13 @@ window.showScenario = function(name) {
       }
       spark.appendChild(rect);
       retCell.appendChild(spark);
-      // Animate bar
-      var obs = new IntersectionObserver(function(entries) {
-        if (entries[0].isIntersecting) {
-          rect.setAttribute('width', String(w));
-          obs.disconnect();
-        }
-      }, { threshold: 0.5 });
-      obs.observe(row);
+
+      // Attach references for shared observer
+      row._sparkRect = rect;
+      row._sparkWidth = w;
+
+      // Animate bar using shared observer
+      sparkObs.observe(row);
     });
   });
 })();
