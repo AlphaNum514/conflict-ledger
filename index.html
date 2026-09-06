@@ -3156,8 +3156,14 @@ body.show-research .nav-progress { display: block; }
     requestAnimationFrame(updateScroll);
   }, { passive: true });
 
+  /* Debounce window resize handler to prevent layout thrashing and synchronous reflows
+     (reading document.body.scrollHeight and el.offsetTop) during high-frequency resize events */
+  var resizeTimer;
   window.addEventListener('resize', function() {
-    window.refreshOffsets();
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function() {
+      window.refreshOffsets();
+    }, 150);
   });
 
   // Initial call
