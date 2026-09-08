@@ -9,3 +9,7 @@
 ## 2026-08-15 - Array Sorting Comparator DOM Access and Regex Overhead
 **Learning:** Accessing DOM element properties (`textContent`), performing string operations (`trim`), and evaluating regular expressions (`replace(/[^-\d.]/g, '')`) inside the $O(N \log N)$ comparison callback of `Array.prototype.sort()` causes repeated DOM reads and unnecessary string processing per comparison step.
 **Action:** Use a pre-parsed mapping array (Schwartzian transform pattern) to extract text and numbers in $O(N)$ before sorting, and batch DOM mutations using `DocumentFragment`.
+
+## 2026-09-08 - O(N) Observer Instantiation in Loops
+**Learning:** Instantiating individual `IntersectionObserver` instances inside iteration loops (like `.forEach` over table rows) causes unnecessary object allocations, browser observer registration overhead, and garbage collection pressure.
+**Action:** Instantiate a single shared `IntersectionObserver` outside loops, attach target property references (e.g. `_sparkRect`, `_sparkWidth`) to element nodes, and use `unobserve(entry.target)` upon intersection.
