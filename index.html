@@ -3094,6 +3094,7 @@ body.show-research .nav-progress { display: block; }
   var maxScroll = 1;
   var rafPending = false;
   var lastActiveId = '';
+  var lastRoundedPct = -1;
 
   // Elements to update
   var progBarSimple, progBarRes, scrollTopBtn, navProgText, navLinkMap = {};
@@ -3122,8 +3123,17 @@ body.show-research .nav-progress { display: block; }
       if (!scrollTopBtn) scrollTopBtn = document.getElementById('scrollTop');
       if (scrollTopBtn) scrollTopBtn.classList.toggle('show', s > 400);
 
-      if (!navProgText) navProgText = document.getElementById('nav-progress');
-      if (navProgText) navProgText.textContent = Math.round(pct) + '% read';
+      /*
+        ⚡ Bolt Performance Optimization:
+        Cache last rounded percentage to eliminate redundant DOM text node mutations
+        and string allocations on every scroll frame when the integer percentage hasn't changed.
+      */
+      var roundedPct = Math.round(pct);
+      if (roundedPct !== lastRoundedPct) {
+        lastRoundedPct = roundedPct;
+        if (!navProgText) navProgText = document.getElementById('nav-progress');
+        if (navProgText) navProgText.textContent = roundedPct + '% read';
+      }
 
       // Navigation Highlighting
       var y = s + 130;
@@ -3156,8 +3166,17 @@ body.show-research .nav-progress { display: block; }
     requestAnimationFrame(updateScroll);
   }, { passive: true });
 
+  /*
+    ⚡ Bolt Performance Optimization:
+    Debounce window resize events with a 150ms timer to prevent repeated synchronous
+    layout queries (`scrollHeight` and `offsetTop`) and layout thrashing during active browser window resizing.
+  */
+  var resizeTimer = null;
   window.addEventListener('resize', function() {
-    window.refreshOffsets();
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function() {
+      window.refreshOffsets();
+    }, 150);
   });
 
   // Initial call
