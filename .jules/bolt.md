@@ -13,3 +13,7 @@
 ## 2026-09-10 - O(N) IntersectionObserver Allocations in Loop Structures
 **Learning:** Creating individual `IntersectionObserver` instances inside iteration loops over DOM elements (such as table rows) allocates $N$ observer objects and registers $N$ separate browser internal listeners, leading to high garbage collection overhead and memory fragmentation.
 **Action:** Declare a single shared `IntersectionObserver` instance outside the loop. Attach element-specific state or references directly to the DOM target element, and unobserve individual targets as they intersect.
+
+## 2026-10-18 - Redundant DOM Mutations in High-Frequency Scroll Progress Update
+**Learning:** Mutating element `textContent` on every frame inside a `requestAnimationFrame` scroll handler causes unnecessary string allocations and DOM text node mutations even when the integer progress value (`Math.round(pct)`) has not changed.
+**Action:** Cache the last rendered integer progress state (`lastRoundedPct`) and only update `textContent` when the integer value actually changes.
