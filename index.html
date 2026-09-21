@@ -3156,8 +3156,18 @@ body.show-research .nav-progress { display: block; }
     requestAnimationFrame(updateScroll);
   }, { passive: true });
 
+  /*
+    ⚡ Bolt Performance Optimization:
+    Debounce the window resize listener using a 150ms delay to prevent excessive,
+    synchronous layout thrashing (`window.refreshOffsets` reading `scrollHeight` and `offsetTop`)
+    during active window resizing.
+  */
+  var resizeTimer;
   window.addEventListener('resize', function() {
-    window.refreshOffsets();
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function() {
+      if (window.refreshOffsets) window.refreshOffsets();
+    }, 150);
   });
 
   // Initial call
