@@ -13,3 +13,7 @@
 ## 2026-09-10 - O(N) IntersectionObserver Allocations in Loop Structures
 **Learning:** Creating individual `IntersectionObserver` instances inside iteration loops over DOM elements (such as table rows) allocates $N$ observer objects and registers $N$ separate browser internal listeners, leading to high garbage collection overhead and memory fragmentation.
 **Action:** Declare a single shared `IntersectionObserver` instance outside the loop. Attach element-specific state or references directly to the DOM target element, and unobserve individual targets as they intersect.
+
+## 2026-09-18 - DOM Caching and Frame-Deferred Layout Offset Refresh in Scenario Picker
+**Learning:** Executing 11 `document.getElementById` and multiple `querySelectorAll` calls on every scenario switch created unnecessary DOM traversal overhead. Furthermore, calling `window.refreshOffsets()` (which reads `offsetTop` and `scrollHeight`) synchronously inside the event handler immediately after mutating DOM text and classes caused severe layout thrashing (synchronous reflow).
+**Action:** Cache DOM element and button references on lazy initialization (`initScEls`). Consolidate button active state and `aria-pressed` updates into a single pass. Defer `window.refreshOffsets()` using `requestAnimationFrame` to decouple DOM writes from layout reads.

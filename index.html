@@ -3315,29 +3315,78 @@ var SCENARIOS = {
   }
 };
 
+/*
+  ⚡ Bolt Performance Optimization:
+  By caching lookups for scenario output DOM elements (`scEls`) and scenario selection
+  buttons (`scBtnMap`), we eliminate redundant DOM traversals (document.getElementById
+  and document.querySelectorAll) on scenario selection events. This avoids layout thrashing
+  and keeps scenario updates lightning-fast.
+*/
+var scEls = null;
+var scBtnMap = null;
+function initScEls() {
+  if (scEls) return;
+  scEls = {
+    title:   document.getElementById('sc-title'),
+    defense: document.getElementById('sc-defense'),
+    spend:   document.getElementById('sc-spend'),
+    oil:     document.getElementById('sc-oil'),
+    recon:   document.getElementById('sc-recon'),
+    human:   document.getElementById('sc-human'),
+    note:    document.getElementById('sc-note'),
+    output:  document.getElementById('sc-output')
+  };
+  scBtnMap = {};
+  var btns = document.querySelectorAll('.sc-btn');
+  btns.forEach(function(btn) {
+    if (btn.classList.contains('bull')) scBtnMap['bull'] = btn;
+    else if (btn.classList.contains('base')) scBtnMap['base'] = btn;
+    else if (btn.classList.contains('bear')) scBtnMap['bear'] = btn;
+  });
+  scBtnMap._all = Array.prototype.slice.call(btns);
+}
+
 function showScenario(name) {
   var s = SCENARIOS[name];
-  document.getElementById('sc-title').textContent   = s.title;
-  document.getElementById('sc-defense').textContent = s.defense;
-  document.getElementById('sc-spend').textContent   = s.spend;
-  document.getElementById('sc-oil').textContent     = s.oil;
-  document.getElementById('sc-recon').textContent   = s.recon;
-  document.getElementById('sc-human').textContent   = s.human;
-  document.getElementById('sc-note').textContent    = s.note;
+  if (!s) return;
+  initScEls();
 
-  // Color defense value
-  var defEl = document.getElementById('sc-defense');
-  defEl.className = 'sc-row-val ' + (name === 'bear' ? 'neg' : 'pos');
+  if (scEls.title)   scEls.title.textContent   = s.title;
+  if (scEls.defense) {
+    scEls.defense.textContent = s.defense;
+    scEls.defense.className = 'sc-row-val ' + (name === 'bear' ? 'neg' : 'pos');
+  }
+  if (scEls.spend)   scEls.spend.textContent   = s.spend;
+  if (scEls.oil)     scEls.oil.textContent     = s.oil;
+  if (scEls.recon)   {
+    scEls.recon.textContent   = s.recon;
+    scEls.recon.style.color = name === 'bear' ? 'var(--green)' : 'var(--muted)';
+  }
+  if (scEls.human)   scEls.human.textContent   = s.human;
+  if (scEls.note)    scEls.note.textContent    = s.note;
 
-  // Color recon value
-  var reconEl = document.getElementById('sc-recon');
-  reconEl.style.color = name === 'bear' ? 'var(--green)' : 'var(--muted)';
+  // Active button state & ARIA attributes
+  if (scBtnMap && scBtnMap._all) {
+    scBtnMap._all.forEach(function(b) {
+      b.classList.remove('s-active');
+      b.setAttribute('aria-pressed', 'false');
+    });
+    var activeBtn = scBtnMap[name];
+    if (activeBtn) {
+      activeBtn.classList.add('s-active');
+      activeBtn.setAttribute('aria-pressed', 'true');
+    }
+  }
 
-  // Active button state
-  document.querySelectorAll('.sc-btn').forEach(function(b) { b.classList.remove('s-active'); });
-  document.querySelector('.sc-btn.' + name).classList.add('s-active');
+  if (scEls.output) scEls.output.classList.add('s-show');
 
-  document.getElementById('sc-output').classList.add('s-show');
+  // Defer layout offset refresh to next frame to avoid synchronous layout thrashing
+  if (window.refreshOffsets && !window._scNavRaf) {
+    window._scNavRaf = requestAnimationFrame(function() {
+      window.refreshOffsets();
+      window._scNavRaf = null;
+    });
+  }
 }
 
 
@@ -4090,20 +4139,7 @@ window.initConflictMap = function() {
   setTimeout(upgradeMapMarkers, 500);
 };
 
-/* ── SCENARIO BUTTONS — fix aria-pressed ─────────────────── */
-var _origShowScenario = window.showScenario;
-window.showScenario = function(name) {
-  if (_origShowScenario) _origShowScenario(name);
-  document.querySelectorAll('.sc-btn').forEach(function(btn) {
-    btn.setAttribute('aria-pressed', 'false');
-    btn.classList.remove('s-active');
-  });
-  var activeBtn = document.querySelector('.sc-btn.' + name);
-  if (activeBtn) {
-    activeBtn.setAttribute('aria-pressed', 'true');
-    activeBtn.classList.add('s-active');
-  }
-};
+/* Note: Scenario button active state and aria-pressed attributes are directly managed in optimized window.showScenario using cached DOM references. */
 
 /* ── SECTOR TABLE — add inline color bars dynamically ─────── */
 (function() {
