@@ -13,3 +13,7 @@
 ## 2026-09-10 - O(N) IntersectionObserver Allocations in Loop Structures
 **Learning:** Creating individual `IntersectionObserver` instances inside iteration loops over DOM elements (such as table rows) allocates $N$ observer objects and registers $N$ separate browser internal listeners, leading to high garbage collection overhead and memory fragmentation.
 **Action:** Declare a single shared `IntersectionObserver` instance outside the loop. Attach element-specific state or references directly to the DOM target element, and unobserve individual targets as they intersect.
+
+## 2026-09-26 - Layout Thrashing on Continuous Window Resize Events
+**Learning:** Invoking functions that perform synchronous DOM layout reads (`offsetTop`, `scrollHeight`) directly inside un-throttled `window` `resize` event listeners triggers continuous forced reflows during active window dragging/resizing.
+**Action:** Debounce window `resize` event handlers using a timer (e.g. 150ms `setTimeout`) to defer layout calculations until resizing pauses.
