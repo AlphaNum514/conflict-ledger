@@ -13,3 +13,7 @@
 ## 2026-09-10 - O(N) IntersectionObserver Allocations in Loop Structures
 **Learning:** Creating individual `IntersectionObserver` instances inside iteration loops over DOM elements (such as table rows) allocates $N$ observer objects and registers $N$ separate browser internal listeners, leading to high garbage collection overhead and memory fragmentation.
 **Action:** Declare a single shared `IntersectionObserver` instance outside the loop. Attach element-specific state or references directly to the DOM target element, and unobserve individual targets as they intersect.
+
+## 2026-09-27 - DOM Element Lookup Overhead in Interactive Controls
+**Learning:** Querying the DOM via `document.getElementById` and `document.querySelectorAll` inside user interaction handlers (like scenario selection buttons) causes unnecessary DOM tree traversal and redundant queries on every click. Additionally, executing `window.refreshOffsets()` synchronously right after DOM mutations causes forced synchronous layout reflows.
+**Action:** Lazily cache DOM element handles and button mappings in a module-scoped object (`scEls`, `scBtnMap`). Defer downstream layout offset recalculations (`refreshOffsets`) to `requestAnimationFrame` to avoid layout thrashing.
