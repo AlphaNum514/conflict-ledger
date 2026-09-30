@@ -3168,8 +3168,19 @@ body.show-research .nav-progress { display: block; }
     requestAnimationFrame(updateScroll);
   }, { passive: true });
 
+  /*
+    ⚡ Bolt Performance Optimization:
+    Debouncing window resize events prevents severe layout thrashing during active resizing.
+    Recalculating section offsetTop values and document scrollHeight synchronously on every
+    resize event fires hundreds of times per second, forcing layout recalcs.
+    Using a 150ms debounce ensures offsets are recomputed only when continuous resizing stops.
+  */
+  var resizeTimer = null;
   window.addEventListener('resize', function() {
-    window.refreshOffsets();
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function() {
+      window.refreshOffsets();
+    }, 150);
   });
 
   // Initial call
