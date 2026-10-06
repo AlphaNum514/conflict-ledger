@@ -3168,9 +3168,19 @@ body.show-research .nav-progress { display: block; }
     requestAnimationFrame(updateScroll);
   }, { passive: true });
 
+  /*
+    ⚡ Bolt Performance Optimization:
+    Debouncing the window resize listener prevents rapid, synchronous calls to `window.refreshOffsets()`.
+    During active window resizing or orientation shifts, this avoids continuous layout recalculations (`scrollHeight`, `offsetTop`),
+    drastically reducing main-thread layout thrashing and eliminating frame drops.
+  */
+  var resizeTimer = null;
   window.addEventListener('resize', function() {
-    window.refreshOffsets();
-  });
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function() {
+      if (window.refreshOffsets) window.refreshOffsets();
+    }, 150);
+  }, { passive: true });
 
   // Initial call
   document.addEventListener('DOMContentLoaded', function() {
