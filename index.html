@@ -3327,29 +3327,66 @@ var SCENARIOS = {
   }
 };
 
+/*
+  ⚡ Bolt Performance Optimization:
+  Cache scenario picker DOM element references lazily to eliminate O(N) DOM query thrashing
+  (`getElementById`, `querySelectorAll`, `querySelector`) during user interaction.
+*/
+var scEls = null;
+var scBtns = null;
+var scBtnMap = {};
+
+function initScEls() {
+  if (scEls) return;
+  scEls = {
+    title: document.getElementById('sc-title'),
+    defense: document.getElementById('sc-defense'),
+    spend: document.getElementById('sc-spend'),
+    oil: document.getElementById('sc-oil'),
+    recon: document.getElementById('sc-recon'),
+    human: document.getElementById('sc-human'),
+    note: document.getElementById('sc-note'),
+    output: document.getElementById('sc-output')
+  };
+  scBtns = Array.prototype.slice.call(document.querySelectorAll('.sc-btn'));
+  scBtns.forEach(function(btn) {
+    if (btn.classList.contains('bull')) scBtnMap['bull'] = btn;
+    else if (btn.classList.contains('base')) scBtnMap['base'] = btn;
+    else if (btn.classList.contains('bear')) scBtnMap['bear'] = btn;
+  });
+}
+
 function showScenario(name) {
   var s = SCENARIOS[name];
-  document.getElementById('sc-title').textContent   = s.title;
-  document.getElementById('sc-defense').textContent = s.defense;
-  document.getElementById('sc-spend').textContent   = s.spend;
-  document.getElementById('sc-oil').textContent     = s.oil;
-  document.getElementById('sc-recon').textContent   = s.recon;
-  document.getElementById('sc-human').textContent   = s.human;
-  document.getElementById('sc-note').textContent    = s.note;
+  if (!s) return;
+  initScEls();
+
+  if (scEls.title) scEls.title.textContent = s.title;
+  if (scEls.defense) scEls.defense.textContent = s.defense;
+  if (scEls.spend) scEls.spend.textContent = s.spend;
+  if (scEls.oil) scEls.oil.textContent = s.oil;
+  if (scEls.recon) scEls.recon.textContent = s.recon;
+  if (scEls.human) scEls.human.textContent = s.human;
+  if (scEls.note) scEls.note.textContent = s.note;
 
   // Color defense value
-  var defEl = document.getElementById('sc-defense');
-  defEl.className = 'sc-row-val ' + (name === 'bear' ? 'neg' : 'pos');
+  if (scEls.defense) scEls.defense.className = 'sc-row-val ' + (name === 'bear' ? 'neg' : 'pos');
 
   // Color recon value
-  var reconEl = document.getElementById('sc-recon');
-  reconEl.style.color = name === 'bear' ? 'var(--green)' : 'var(--muted)';
+  if (scEls.recon) scEls.recon.style.color = name === 'bear' ? 'var(--green)' : 'var(--muted)';
 
   // Active button state
-  document.querySelectorAll('.sc-btn').forEach(function(b) { b.classList.remove('s-active'); });
-  document.querySelector('.sc-btn.' + name).classList.add('s-active');
+  if (scBtns) {
+    scBtns.forEach(function(b) { b.classList.remove('s-active'); });
+  }
+  if (scBtnMap[name]) scBtnMap[name].classList.add('s-active');
 
-  document.getElementById('sc-output').classList.add('s-show');
+  if (scEls.output) scEls.output.classList.add('s-show');
+
+  // Defer layout offset recalculations to prevent synchronous reflow thrashing on DOM updates
+  if (window.refreshOffsets) {
+    requestAnimationFrame(window.refreshOffsets);
+  }
 }
 
 
@@ -4106,14 +4143,25 @@ window.initConflictMap = function() {
 var _origShowScenario = window.showScenario;
 window.showScenario = function(name) {
   if (_origShowScenario) _origShowScenario(name);
-  document.querySelectorAll('.sc-btn').forEach(function(btn) {
-    btn.setAttribute('aria-pressed', 'false');
-    btn.classList.remove('s-active');
-  });
-  var activeBtn = document.querySelector('.sc-btn.' + name);
-  if (activeBtn) {
-    activeBtn.setAttribute('aria-pressed', 'true');
-    activeBtn.classList.add('s-active');
+  if (typeof scBtns !== 'undefined' && scBtns && scBtns.length) {
+    scBtns.forEach(function(btn) {
+      btn.setAttribute('aria-pressed', 'false');
+      btn.classList.remove('s-active');
+    });
+    if (scBtnMap[name]) {
+      scBtnMap[name].setAttribute('aria-pressed', 'true');
+      scBtnMap[name].classList.add('s-active');
+    }
+  } else {
+    document.querySelectorAll('.sc-btn').forEach(function(btn) {
+      btn.setAttribute('aria-pressed', 'false');
+      btn.classList.remove('s-active');
+    });
+    var activeBtn = document.querySelector('.sc-btn.' + name);
+    if (activeBtn) {
+      activeBtn.setAttribute('aria-pressed', 'true');
+      activeBtn.classList.add('s-active');
+    }
   }
 };
 
