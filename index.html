@@ -2081,17 +2081,17 @@ body.show-research .nav-progress { display: block; }
     <p style="font-size:15px;color:var(--muted);margin-bottom:20px;line-height:1.7;">Three possible paths from here. Select one to see how different conflict trajectories might affect key economic indicators. <strong style="color:var(--text);">For illustration only — not a forecast or investment advice.</strong></p>
 
     <div class="scenario-strip s-reveal">
-      <button class="sc-btn bull" onclick="showScenario('bull')">
+      <button class="sc-btn bull" aria-pressed="false" onclick="showScenario('bull')">
         <div class="sc-btn-icon">📈</div>
         <span class="sc-btn-label">Escalation</span>
         <div class="sc-btn-desc">Conflicts intensify. More countries rearm. Defense spending keeps climbing. Pattern based on 2022–2023 escalation data.</div>
       </button>
-      <button class="sc-btn base s-active" onclick="showScenario('base')">
+      <button class="sc-btn base s-active" aria-pressed="true" onclick="showScenario('base')">
         <div class="sc-btn-icon">📊</div>
         <span class="sc-btn-label">Status Quo</span>
         <div class="sc-btn-desc">Current conflicts continue at similar intensity. Consistent with 2024–2025 trajectory based on SIPRI and NATO spending data.</div>
       </button>
-      <button class="sc-btn bear" onclick="showScenario('bear')">
+      <button class="sc-btn bear" aria-pressed="false" onclick="showScenario('bear')">
         <div class="sc-btn-icon">🕊</div>
         <span class="sc-btn-label">De-escalation</span>
         <div class="sc-btn-desc">Ukraine ceasefire. Diplomatic progress in Middle East. Defense stocks fall. Based on post-Cold War drawdown and post-2003 Iraq patterns: sector typically de-rates 20–35% within 12 months of credible peace signals.</div>
@@ -3327,29 +3327,73 @@ var SCENARIOS = {
   }
 };
 
+/*
+  ⚡ Bolt Performance Optimization:
+  The scenario picker's `showScenario` function is optimized via lazily-initialized `scEls` and `scBtnMap`
+  cache objects (`initScEls()`) to eliminate redundant DOM lookups (`document.getElementById`, `querySelectorAll`)
+  and updates `aria-pressed` and active class states in a single O(1) pass. Furthermore, `window.refreshOffsets()`
+  is deferred via `requestAnimationFrame` to prevent synchronous layout thrashing when scenario content height changes.
+*/
+var scEls = null;
+var scBtnMap = null;
+function initScEls() {
+  if (scEls) return;
+  scEls = {
+    title: document.getElementById('sc-title'),
+    defense: document.getElementById('sc-defense'),
+    spend: document.getElementById('sc-spend'),
+    oil: document.getElementById('sc-oil'),
+    recon: document.getElementById('sc-recon'),
+    human: document.getElementById('sc-human'),
+    note: document.getElementById('sc-note'),
+    output: document.getElementById('sc-output')
+  };
+  scBtnMap = {};
+  var btns = document.querySelectorAll('.sc-btn');
+  btns.forEach(function(btn) {
+    if (btn.classList.contains('bull')) scBtnMap['bull'] = btn;
+    if (btn.classList.contains('base')) scBtnMap['base'] = btn;
+    if (btn.classList.contains('bear')) scBtnMap['bear'] = btn;
+  });
+}
+
 function showScenario(name) {
   var s = SCENARIOS[name];
-  document.getElementById('sc-title').textContent   = s.title;
-  document.getElementById('sc-defense').textContent = s.defense;
-  document.getElementById('sc-spend').textContent   = s.spend;
-  document.getElementById('sc-oil').textContent     = s.oil;
-  document.getElementById('sc-recon').textContent   = s.recon;
-  document.getElementById('sc-human').textContent   = s.human;
-  document.getElementById('sc-note').textContent    = s.note;
+  if (!s) return;
+  initScEls();
 
-  // Color defense value
-  var defEl = document.getElementById('sc-defense');
-  defEl.className = 'sc-row-val ' + (name === 'bear' ? 'neg' : 'pos');
+  if (scEls.title) scEls.title.textContent = s.title;
+  if (scEls.defense) {
+    scEls.defense.textContent = s.defense;
+    scEls.defense.className = 'sc-row-val ' + (name === 'bear' ? 'neg' : 'pos');
+  }
+  if (scEls.spend) scEls.spend.textContent = s.spend;
+  if (scEls.oil) scEls.oil.textContent = s.oil;
+  if (scEls.recon) {
+    scEls.recon.textContent = s.recon;
+    scEls.recon.style.color = name === 'bear' ? 'var(--green)' : 'var(--muted)';
+  }
+  if (scEls.human) scEls.human.textContent = s.human;
+  if (scEls.note) scEls.note.textContent = s.note;
 
-  // Color recon value
-  var reconEl = document.getElementById('sc-recon');
-  reconEl.style.color = name === 'bear' ? 'var(--green)' : 'var(--muted)';
+  // Active button state and ARIA attributes in a single pass
+  ['bull', 'base', 'bear'].forEach(function(k) {
+    var btn = scBtnMap[k];
+    if (btn) {
+      var isActive = (k === name);
+      btn.classList.toggle('s-active', isActive);
+      btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    }
+  });
 
-  // Active button state
-  document.querySelectorAll('.sc-btn').forEach(function(b) { b.classList.remove('s-active'); });
-  document.querySelector('.sc-btn.' + name).classList.add('s-active');
+  if (scEls.output) scEls.output.classList.add('s-show');
 
-  document.getElementById('sc-output').classList.add('s-show');
+  // Defer layout offset refresh to avoid synchronous reflow/layout thrashing
+  if (window.refreshOffsets) {
+    requestAnimationFrame(function() {
+      window.refreshOffsets();
+    });
+  }
 }
 
 
@@ -4102,20 +4146,6 @@ window.initConflictMap = function() {
   setTimeout(upgradeMapMarkers, 500);
 };
 
-/* ── SCENARIO BUTTONS — fix aria-pressed ─────────────────── */
-var _origShowScenario = window.showScenario;
-window.showScenario = function(name) {
-  if (_origShowScenario) _origShowScenario(name);
-  document.querySelectorAll('.sc-btn').forEach(function(btn) {
-    btn.setAttribute('aria-pressed', 'false');
-    btn.classList.remove('s-active');
-  });
-  var activeBtn = document.querySelector('.sc-btn.' + name);
-  if (activeBtn) {
-    activeBtn.setAttribute('aria-pressed', 'true');
-    activeBtn.classList.add('s-active');
-  }
-};
 
 /* ── SECTOR TABLE — add inline color bars dynamically ─────── */
 (function() {
