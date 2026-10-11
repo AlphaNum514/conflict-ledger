@@ -3168,8 +3168,18 @@ body.show-research .nav-progress { display: block; }
     requestAnimationFrame(updateScroll);
   }, { passive: true });
 
+  /*
+    ⚡ Bolt Performance Optimization:
+    Debouncing the resize listener with a 150ms timeout prevents severe layout thrashing
+    caused by synchronous document.body.scrollHeight and element.offsetTop DOM queries on
+    every window resize frame during continuous window drag/resizing.
+  */
+  var resizeTimer = null;
   window.addEventListener('resize', function() {
-    window.refreshOffsets();
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function() {
+      window.refreshOffsets();
+    }, 150);
   });
 
   // Initial call
