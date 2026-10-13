@@ -3337,29 +3337,69 @@ var SCENARIOS = {
   }
 };
 
+/*
+  ⚡ Bolt Performance Optimization:
+  By lazily caching scenario output elements (`scEls`) and scenario button maps (`scBtnMap`),
+  we eliminate redundant DOM queries (document.getElementById, querySelectorAll, querySelector)
+  on scenario button click events, preventing layout thrashing and delivering instantaneous UI updates.
+*/
+var scEls = null;
+var scBtnMap = null;
+
+function initScEls() {
+  if (scEls) return;
+  scEls = {
+    'sc-title': document.getElementById('sc-title'),
+    'sc-defense': document.getElementById('sc-defense'),
+    'sc-spend': document.getElementById('sc-spend'),
+    'sc-oil': document.getElementById('sc-oil'),
+    'sc-recon': document.getElementById('sc-recon'),
+    'sc-human': document.getElementById('sc-human'),
+    'sc-note': document.getElementById('sc-note'),
+    'sc-output': document.getElementById('sc-output')
+  };
+  scBtnMap = {};
+  var btns = document.querySelectorAll('.sc-btn');
+  btns.forEach(function(btn) {
+    ['bull', 'base', 'bear'].forEach(function(k) {
+      if (btn.classList.contains(k)) scBtnMap[k] = btn;
+    });
+  });
+  scBtnMap._all = btns;
+}
+
 function showScenario(name) {
   var s = SCENARIOS[name];
-  document.getElementById('sc-title').textContent   = s.title;
-  document.getElementById('sc-defense').textContent = s.defense;
-  document.getElementById('sc-spend').textContent   = s.spend;
-  document.getElementById('sc-oil').textContent     = s.oil;
-  document.getElementById('sc-recon').textContent   = s.recon;
-  document.getElementById('sc-human').textContent   = s.human;
-  document.getElementById('sc-note').textContent    = s.note;
+  if (!s) return;
+  initScEls();
 
-  // Color defense value
-  var defEl = document.getElementById('sc-defense');
-  defEl.className = 'sc-row-val ' + (name === 'bear' ? 'neg' : 'pos');
+  if (scEls['sc-title']) scEls['sc-title'].textContent   = s.title;
+  if (scEls['sc-defense']) {
+    scEls['sc-defense'].textContent = s.defense;
+    scEls['sc-defense'].className   = 'sc-row-val ' + (name === 'bear' ? 'neg' : 'pos');
+  }
+  if (scEls['sc-spend']) scEls['sc-spend'].textContent   = s.spend;
+  if (scEls['sc-oil'])   scEls['sc-oil'].textContent     = s.oil;
+  if (scEls['sc-recon']) {
+    scEls['sc-recon'].textContent   = s.recon;
+    scEls['sc-recon'].style.color   = name === 'bear' ? 'var(--green)' : 'var(--muted)';
+  }
+  if (scEls['sc-human']) scEls['sc-human'].textContent   = s.human;
+  if (scEls['sc-note'])  scEls['sc-note'].textContent    = s.note;
 
-  // Color recon value
-  var reconEl = document.getElementById('sc-recon');
-  reconEl.style.color = name === 'bear' ? 'var(--green)' : 'var(--muted)';
+  // Active button state and ARIA updates via cached button references
+  if (scBtnMap && scBtnMap._all) {
+    scBtnMap._all.forEach(function(b) {
+      b.classList.remove('s-active');
+      b.setAttribute('aria-pressed', 'false');
+    });
+  }
+  if (scBtnMap && scBtnMap[name]) {
+    scBtnMap[name].classList.add('s-active');
+    scBtnMap[name].setAttribute('aria-pressed', 'true');
+  }
 
-  // Active button state
-  document.querySelectorAll('.sc-btn').forEach(function(b) { b.classList.remove('s-active'); });
-  document.querySelector('.sc-btn.' + name).classList.add('s-active');
-
-  document.getElementById('sc-output').classList.add('s-show');
+  if (scEls['sc-output']) scEls['sc-output'].classList.add('s-show');
 }
 
 
@@ -4112,20 +4152,7 @@ window.initConflictMap = function() {
   setTimeout(upgradeMapMarkers, 500);
 };
 
-/* ── SCENARIO BUTTONS — fix aria-pressed ─────────────────── */
-var _origShowScenario = window.showScenario;
-window.showScenario = function(name) {
-  if (_origShowScenario) _origShowScenario(name);
-  document.querySelectorAll('.sc-btn').forEach(function(btn) {
-    btn.setAttribute('aria-pressed', 'false');
-    btn.classList.remove('s-active');
-  });
-  var activeBtn = document.querySelector('.sc-btn.' + name);
-  if (activeBtn) {
-    activeBtn.setAttribute('aria-pressed', 'true');
-    activeBtn.classList.add('s-active');
-  }
-};
+/* ── SCENARIO BUTTONS — aria-pressed handling integrated into showScenario ── */
 
 /* ── SECTOR TABLE — add inline color bars dynamically ─────── */
 (function() {
