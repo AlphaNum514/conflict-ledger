@@ -13,3 +13,7 @@
 ## 2026-09-10 - O(N) IntersectionObserver Allocations in Loop Structures
 **Learning:** Creating individual `IntersectionObserver` instances inside iteration loops over DOM elements (such as table rows) allocates $N$ observer objects and registers $N$ separate browser internal listeners, leading to high garbage collection overhead and memory fragmentation.
 **Action:** Declare a single shared `IntersectionObserver` instance outside the loop. Attach element-specific state or references directly to the DOM target element, and unobserve individual targets as they intersect.
+
+## 2026-10-15 - Interactive Component Redundant DOM Queries and Wrapper Overrides
+**Learning:** Performing repeated DOM element queries (`document.getElementById`, `document.querySelectorAll`) and multi-pass monkey-patch wrappers inside event-driven UI components (such as tab or scenario pickers) creates redundant DOM tree traversals and duplicate class/attribute mutations on every user click.
+**Action:** Lazily initialize a DOM reference cache (`initScEls()`) on first interaction, consolidate class and ARIA state updates into a single pass over the cached collection, and defer layout recalculations via `requestAnimationFrame`.
