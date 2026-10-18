@@ -17,3 +17,7 @@
 ## 2026-09-28 - Redundant DOM Queries and Function Wrapper Duplication in Interactive Switchers
 **Learning:** In single-file vanilla JS architectures, monkey-patching event handlers across script blocks (e.g. wrapping `window.showScenario` to attach accessibility attributes) often introduces duplicate DOM queries (`document.querySelectorAll`, `getElementById`) and redundant iteration loops on user interactions.
 **Action:** Lazily initialize a DOM cache object (`scEls`, `scBtnMap`) on first interaction, and consolidate class state (`s-active`), ARIA attribute (`aria-pressed`), and content mutations into a single function pass. Defer secondary layout recalculations (`window.refreshOffsets`) using `requestAnimationFrame`.
+
+## 2026-10-18 - Redundant Popup Re-binding in Map Layer Switchers
+**Learning:** Calling `layer.setPopupContent()` during interactive map layer toggles causes unnecessary HTML string construction, DOM template building, and Leaflet popup re-binding when popup contents are static and already bound during marker creation.
+**Action:** Bind static map popups once during marker initialization, lazily cache toggle button DOM references, and only toggle layer visibility (`removeLayer`/`addTo`) during user interaction to avoid garbage collection overhead and DOM parsing.
