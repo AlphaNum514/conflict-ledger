@@ -4028,26 +4028,32 @@ function initConflictMap() {
   humanLayers.forEach(function(l) { l.addTo(conflictMap); });
 }
 
+var mapBtnHuman = null;
+var mapBtnFinancial = null;
+
+/*
+  ⚡ Bolt Performance Optimization:
+  - Lazily Caching DOM Elements: Caches `btn-human` and `btn-financial` DOM references on first toggle,
+    eliminating redundant `document.getElementById` DOM queries on subsequent layer switches.
+  - Eliminating Redundant Popup String Re-allocations: Leaflet markers in `humanLayers` and `financialLayers`
+    are bound with their corresponding static popup content during `initConflictMap()`. Eliminating unnecessary
+    `setPopupContent()` loops during `setMapLayer` avoids string concats and DOM node parsing on every toggle.
+*/
 function setMapLayer(layer) {
   currentMapLayer = layer;
-  document.getElementById('btn-human').classList.toggle('active', layer === 'human');
-  document.getElementById('btn-financial').classList.toggle('active', layer === 'financial');
+  if (!mapBtnHuman) mapBtnHuman = document.getElementById('btn-human');
+  if (!mapBtnFinancial) mapBtnFinancial = document.getElementById('btn-financial');
+  if (mapBtnHuman) mapBtnHuman.classList.toggle('active', layer === 'human');
+  if (mapBtnFinancial) mapBtnFinancial.classList.toggle('active', layer === 'financial');
 
   if (!conflictMap) return;
 
   if (layer === 'human') {
     financialLayers.forEach(function(l) { conflictMap.removeLayer(l); });
     humanLayers.forEach(function(l) { l.addTo(conflictMap); });
-    // Update popups
-    humanLayers.forEach(function(l, i) {
-      l.setPopupContent(buildPopup(CONFLICT_DATA[i], 'human'));
-    });
   } else {
     humanLayers.forEach(function(l) { conflictMap.removeLayer(l); });
     financialLayers.forEach(function(l) { l.addTo(conflictMap); });
-    financialLayers.forEach(function(l, i) {
-      l.setPopupContent(buildPopup(CONFLICT_DATA[i], 'financial'));
-    });
   }
 }
 
