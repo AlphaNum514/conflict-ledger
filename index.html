@@ -4028,26 +4028,29 @@ function initConflictMap() {
   humanLayers.forEach(function(l) { l.addTo(conflictMap); });
 }
 
+/*
+  ⚡ Bolt Performance Optimization:
+  1. Cache DOM references for layer buttons (mapBtnHuman, mapBtnFinancial) to eliminate redundant
+     document.getElementById calls on map layer toggles.
+  2. Remove unnecessary l.setPopupContent() iteration loop during layer switching, as static popup
+     bindings are already constructed once in initConflictMap().
+*/
+var mapBtnHuman = null, mapBtnFinancial = null;
 function setMapLayer(layer) {
   currentMapLayer = layer;
-  document.getElementById('btn-human').classList.toggle('active', layer === 'human');
-  document.getElementById('btn-financial').classList.toggle('active', layer === 'financial');
+  if (!mapBtnHuman) mapBtnHuman = document.getElementById('btn-human');
+  if (!mapBtnFinancial) mapBtnFinancial = document.getElementById('btn-financial');
+  if (mapBtnHuman) mapBtnHuman.classList.toggle('active', layer === 'human');
+  if (mapBtnFinancial) mapBtnFinancial.classList.toggle('active', layer === 'financial');
 
   if (!conflictMap) return;
 
   if (layer === 'human') {
     financialLayers.forEach(function(l) { conflictMap.removeLayer(l); });
     humanLayers.forEach(function(l) { l.addTo(conflictMap); });
-    // Update popups
-    humanLayers.forEach(function(l, i) {
-      l.setPopupContent(buildPopup(CONFLICT_DATA[i], 'human'));
-    });
   } else {
     humanLayers.forEach(function(l) { conflictMap.removeLayer(l); });
     financialLayers.forEach(function(l) { l.addTo(conflictMap); });
-    financialLayers.forEach(function(l, i) {
-      l.setPopupContent(buildPopup(CONFLICT_DATA[i], 'financial'));
-    });
   }
 }
 
