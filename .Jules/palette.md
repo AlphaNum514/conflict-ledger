@@ -1,0 +1,3 @@
+## 2024-10-24 - Unlabelled Custom Sliders
+**Learning:** Custom UI elements like range sliders in complex layouts often lose accessibility because their visual labels aren't semantically linked to the input itself.
+**Action:** Always use `aria-labelledby` and `aria-describedby` on custom sliders to connect them to their distinct visual label and hint text elements, ensuring screen readers announce the purpose and description correctly.
