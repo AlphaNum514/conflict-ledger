@@ -1,0 +1,3 @@
+## 2026-03-17 - Portfolio Simulator Accessibility
+**Learning:** Found an accessibility pattern where interactive sliders `<input type="range">` in the portfolio simulator were missing semantic `<label for="[id]">` tags and ARIA descriptions linking to their hint texts.
+**Action:** Replaced generic `<span>` labels with properly associated `<label>` tags and added `aria-describedby` referencing unique IDs added to the `.slider-hint` text to make them screen-reader accessible. This is a reusable pattern for all complex input components in this project.

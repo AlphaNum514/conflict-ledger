@@ -2896,24 +2896,24 @@ body.show-research .nav-progress { display: block; }
       <div class="calc-inputs">
         <h4>Input Parameters</h4>
         <div class="slider-row">
-          <div class="slider-label"><span class="slider-name">Defense Budget Change (%)</span><span class="slider-val" id="val-defense">+10%</span></div>
-          <input type="range" id="sl-defense" min="-20" max="40" value="10" step="1" oninput="calcUpdate()">
-          <div class="slider-hint">NATO member avg. annual change · 2024 actual: +8.3% (NATO Secretary General Report)</div>
+          <div class="slider-label"><label class="slider-name" for="sl-defense">Defense Budget Change (%)</label><span class="slider-val" id="val-defense">+10%</span></div>
+          <input type="range" id="sl-defense" min="-20" max="40" value="10" step="1" aria-describedby="hint-defense" oninput="calcUpdate()">
+          <div class="slider-hint" id="hint-defense">NATO member avg. annual change · 2024 actual: +8.3% (NATO Secretary General Report)</div>
         </div>
         <div class="slider-row">
-          <div class="slider-label"><span class="slider-name">Portfolio Defense Allocation (%)</span><span class="slider-val" id="val-alloc">20%</span></div>
-          <input type="range" id="sl-alloc" min="0" max="60" value="20" step="1" oninput="calcUpdate()">
-          <div class="slider-hint">Share of total portfolio in defense &amp; aerospace equities</div>
+          <div class="slider-label"><label class="slider-name" for="sl-alloc">Portfolio Defense Allocation (%)</label><span class="slider-val" id="val-alloc">20%</span></div>
+          <input type="range" id="sl-alloc" min="0" max="60" value="20" step="1" aria-describedby="hint-alloc" oninput="calcUpdate()">
+          <div class="slider-hint" id="hint-alloc">Share of total portfolio in defense &amp; aerospace equities</div>
         </div>
         <div class="slider-row">
-          <div class="slider-label"><span class="slider-name">Conflict Intensity (0–100)</span><span class="slider-val" id="val-intensity">70</span></div>
-          <input type="range" id="sl-intensity" min="0" max="100" value="70" step="5" oninput="calcUpdate()">
-          <div class="slider-hint">Composite index. 0 = no active conflict; 100 = generalized major-power war. Current: ~84</div>
+          <div class="slider-label"><label class="slider-name" for="sl-intensity">Conflict Intensity (0–100)</label><span class="slider-val" id="val-intensity">70</span></div>
+          <input type="range" id="sl-intensity" min="0" max="100" value="70" step="5" aria-describedby="hint-intensity" oninput="calcUpdate()">
+          <div class="slider-hint" id="hint-intensity">Composite index. 0 = no active conflict; 100 = generalized major-power war. Current: ~84</div>
         </div>
         <div class="slider-row">
-          <div class="slider-label"><span class="slider-name">Oil Supply Disruption (%)</span><span class="slider-val" id="val-oil">5%</span></div>
-          <input type="range" id="sl-oil" min="-10" max="30" value="5" step="1" oninput="calcUpdate()">
-          <div class="slider-hint">% reduction in global oil supply attributable to conflict zone disruption</div>
+          <div class="slider-label"><label class="slider-name" for="sl-oil">Oil Supply Disruption (%)</label><span class="slider-val" id="val-oil">5%</span></div>
+          <input type="range" id="sl-oil" min="-10" max="30" value="5" step="1" aria-describedby="hint-oil" oninput="calcUpdate()">
+          <div class="slider-hint" id="hint-oil">% reduction in global oil supply attributable to conflict zone disruption</div>
         </div>
       </div>
       <div class="calc-results">
