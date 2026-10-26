@@ -1,0 +1,3 @@
+## 2025-10-26 - Semantic HTML for Interactive Controls
+**Learning:** In interactive forms like the "Portfolio Impact Simulator" calculators, wrapping visual text tags (e.g. `<span>`) into semantically correct `<label>` tags with a `for` attribute pointing to the input element dramatically improves screen reader navigation and increases the click target size. This change is entirely invisible to sighted users if existing CSS classes are applied correctly.
+**Action:** When inspecting forms, look for adjacent text describing an input element and convert it to a proper `<label>` with a matching `for` attribute if it is currently implemented using generic tags.
