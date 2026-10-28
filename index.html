@@ -3792,12 +3792,16 @@ var PRESETS = {
 
 /*
   ⚡ Bolt Performance Optimization:
-  By caching lookups for frequently accessed calculator elements (`calcEls`), we completely
-  eliminate redundant DOM traversals (document.getElementById) on high-frequency drag/input
-  events. This drastically reduces layout thrashing, avoids frame drops, and keeps the page
-  responsiveness at a silky-smooth 60fps even on lower-end devices.
+  - Caching DOM References (`calcEls`): Lazily caches calculator input and output DOM elements once on first run,
+    eliminating redundant `document.getElementById` lookups on every slider event.
+  - Frame Throttling (`requestAnimationFrame` & `calcRaf` gate): Range slider dragging fires high-frequency `oninput`
+    events (120Hz+). Gating calculations with `calcRaf` coalesces multiple synchronous input events per frame,
+    deferring updates to the browser's display frame repaint cycle (~60-120 FPS). This drastically reduces main thread
+    jank and prevents UI frame drops during fast slider dragging.
 */
 var calcEls = null;
+var calcRaf = false;
+
 function initCalcEls() {
   if (calcEls) return;
   calcEls = {
@@ -3829,7 +3833,7 @@ function applyPreset(name) {
   calcUpdate();
 }
 
-function calcUpdate() {
+function _doCalcUpdate() {
   initCalcEls();
   var slDefense = calcEls['sl-defense'], slAlloc = calcEls['sl-alloc'], slIntensity = calcEls['sl-intensity'], slOil = calcEls['sl-oil'];
   if (!slDefense || !slAlloc || !slIntensity || !slOil) return;
@@ -3871,6 +3875,15 @@ function calcUpdate() {
 
   var resInsurance = calcEls['res-insurance'];
   if (resInsurance) resInsurance.textContent = '+' + ir + '% premium';
+}
+
+function calcUpdate() {
+  if (calcRaf) return;
+  calcRaf = true;
+  requestAnimationFrame(function() {
+    calcRaf = false;
+    _doCalcUpdate();
+  });
 }
 
 /* expose observers globally so initResearch() can access them */
