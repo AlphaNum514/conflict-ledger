@@ -1,0 +1,3 @@
+## 2023-10-24 - Interactive Custom Components Need Full Keyboard & ARIA Support
+**Learning:** Adding sortable behavior (like clicking to sort table columns) to non-interactive elements like `<th>` makes them act like buttons. Without `tabindex="0"`, keyboard event listeners (`keydown` for Enter/Space), and `aria-sort`, these elements become completely invisible and inaccessible to screen reader and keyboard-only users.
+**Action:** When adding click events to custom or traditionally non-interactive components, always ensure they are in the tab order (`tabindex="0"`), handle keyboard activation (`Enter` / `Space`), have a focus indicator (e.g. `:focus-visible`), and properly communicate their state using ARIA attributes (like `aria-sort` or `aria-expanded`).
