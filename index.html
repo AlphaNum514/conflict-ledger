@@ -3829,7 +3829,22 @@ function applyPreset(name) {
   calcUpdate();
 }
 
+/*
+  ⚡ Bolt Performance Optimization:
+  Throttling calcUpdate via a requestAnimationFrame gate (calcRaf) ensures high-frequency range
+  slider drag/input events are batched to render once per animation frame (~60-120 FPS).
+  This eliminates main-thread calculation thrashing and DOM text node mutations during rapid drags.
+*/
+var calcRaf = false;
+
 function calcUpdate() {
+  if (calcRaf) return;
+  calcRaf = true;
+  requestAnimationFrame(_calcUpdateReal);
+}
+
+function _calcUpdateReal() {
+  calcRaf = false;
   initCalcEls();
   var slDefense = calcEls['sl-defense'], slAlloc = calcEls['sl-alloc'], slIntensity = calcEls['sl-intensity'], slOil = calcEls['sl-oil'];
   if (!slDefense || !slAlloc || !slIntensity || !slOil) return;
