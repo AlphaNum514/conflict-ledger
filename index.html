@@ -118,6 +118,7 @@ body.show-research #view-research { display: block; }
 /* ─── SIMPLE STYLES ─────────────────────────────────────────── */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 
 :root {
   --white:   #ffffff;
@@ -2660,7 +2661,7 @@ body.show-research .nav-progress { display: block; }
     </div>
     <div class="table-wrap">
       <table id="sectorTable">
-        <thead><tr><th>Sector</th><th>YTD Return</th><th>Conflict Corr.</th><th>Risk Profile</th><th>Notes</th></tr></thead>
+        <thead><tr><th tabindex="0">Sector</th><th tabindex="0">YTD Return</th><th tabindex="0">Conflict Corr.</th><th tabindex="0">Risk Profile</th><th tabindex="0">Notes</th></tr></thead>
         <tbody>
           <tr data-tip="Includes LMT, NOC, RTX, GD, HII, BA (US) and BAE, Rheinmetall, Thales (EU). Correlation of 0.91 is highest of any sector tracked — government-backed revenue removes consumer cycle risk. Multi-year procurement contracts (MYP) extend revenue visibility 3–5 years.|Source: Bloomberg; SEC filings, YTD 2026"><td>Aerospace &amp; Defense</td><td data-label="YTD Return" class="tc-pos"><div class="td-bar"><div class="td-bar-fill" style="width:65px"></div>+32.4%</div></td><td data-label="Corr.">0.91</td><td data-label="Risk">LOW (gov-backed)</td><td data-label="Notes">Order books at multi-decade highs</td></tr>
           <tr data-tip="Private Military Companies and private security contractors. Highest conflict correlation (0.95) of any sector. Regulatory risk is elevated — the legal framework governing PMC operations remains fragmented internationally. Fastest-growing conflict vertical since 2022.|Source: Bloomberg; industry reports, YTD 2026"><td>Private Security / PMC</td><td data-label="YTD Return" class="tc-pos"><div class="td-bar"><div class="td-bar-fill" style="width:89px"></div>+44.6%</div></td><td data-label="Corr.">0.95</td><td data-label="Risk">HIGH (regulatory)</td><td data-label="Notes">Fastest growing conflict vertical</td></tr>
@@ -3587,10 +3588,14 @@ if (_tblEl) {
   var tbl = _tblEl, tbdy = tbl.querySelector('tbody');
   var sc = -1, sd = 1;
   tbl.querySelectorAll('thead th').forEach(function(th, i) {
-    th.addEventListener('click', function() {
+    function sortColumn() {
       sc === i ? sd *= -1 : (sc = i, sd = 1);
-      tbl.querySelectorAll('thead th').forEach(function(t) { t.classList.remove('sort-asc', 'sort-desc'); });
+      tbl.querySelectorAll('thead th').forEach(function(t) {
+        t.classList.remove('sort-asc', 'sort-desc');
+        t.removeAttribute('aria-sort');
+      });
       th.classList.add(sd === 1 ? 'sort-asc' : 'sort-desc');
+      th.setAttribute('aria-sort', sd === 1 ? 'ascending' : 'descending');
 
       var rows = Array.from(tbdy.querySelectorAll('tr'));
       var mapped = rows.map(function(row) {
@@ -3609,6 +3614,14 @@ if (_tblEl) {
       var frag = document.createDocumentFragment();
       mapped.forEach(function(item) { frag.appendChild(item.row); });
       tbdy.appendChild(frag);
+    }
+
+    th.addEventListener('click', sortColumn);
+    th.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        sortColumn();
+      }
     });
   });
 }
