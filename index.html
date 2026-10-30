@@ -3829,48 +3829,64 @@ function applyPreset(name) {
   calcUpdate();
 }
 
+/*
+  ⚡ Bolt Performance Optimization:
+  Throttling Portfolio Impact Simulator recalculations via a requestAnimationFrame gate (`calcRaf`).
+  During high-frequency range slider drag interactions (`oninput` events firing dozens of times per second),
+  throttling DOM text node mutations and class changes to once per animation frame (~60-120 FPS)
+  prevents main thread jank and ensures smooth 60fps interaction performance.
+*/
+var calcRaf = false;
+
 function calcUpdate() {
-  initCalcEls();
-  var slDefense = calcEls['sl-defense'], slAlloc = calcEls['sl-alloc'], slIntensity = calcEls['sl-intensity'], slOil = calcEls['sl-oil'];
-  if (!slDefense || !slAlloc || !slIntensity || !slOil) return;
+  if (calcRaf) return;
+  calcRaf = true;
 
-  var def = +slDefense.value,
-      alloc = +slAlloc.value,
-      inten = +slIntensity.value,
-      oil = +slOil.value;
+  requestAnimationFrame(function() {
+    calcRaf = false;
 
-  var valDefense = calcEls['val-defense'], valAlloc = calcEls['val-alloc'], valIntensity = calcEls['val-intensity'], valOil = calcEls['val-oil'];
-  if (valDefense) valDefense.textContent = (def >= 0 ? '+' : '') + def + '%';
-  if (valAlloc) valAlloc.textContent = alloc + '%';
-  if (valIntensity) valIntensity.textContent = inten;
-  if (valOil) valOil.textContent = (oil >= 0 ? '+' : '') + oil + '%';
+    initCalcEls();
+    var slDefense = calcEls['sl-defense'], slAlloc = calcEls['sl-alloc'], slIntensity = calcEls['sl-intensity'], slOil = calcEls['sl-oil'];
+    if (!slDefense || !slAlloc || !slIntensity || !slOil) return;
 
-  var dr = (def * 1.85 + inten * .28).toFixed(1),
-      er = (oil * 1.6 + inten * .08).toFixed(1),
-      gr = (inten * .06 + Math.max(0, -def) * .4).toFixed(1),
-      cr = (-inten * .04 - oil * .2).toFixed(1),
-      ir = (oil * 1.1 + inten * .15).toFixed(1),
-      pr = ((alloc / 100) * parseFloat(dr) + (1 - alloc / 100) * parseFloat(er) * .3).toFixed(1);
+    var def = +slDefense.value,
+        alloc = +slAlloc.value,
+        inten = +slIntensity.value,
+        oil = +slOil.value;
 
-  var set = function(id, v, p, n) {
-    var el = calcEls[id];
-    if (el) {
-      el.textContent = (parseFloat(v) >= 0 ? '+' : '') + v + '%';
-      el.className = 'res-val ' + (parseFloat(v) > 0 ? p : parseFloat(v) < 0 ? n : 'neu');
-    }
-  };
+    var valDefense = calcEls['val-defense'], valAlloc = calcEls['val-alloc'], valIntensity = calcEls['val-intensity'], valOil = calcEls['val-oil'];
+    if (valDefense) valDefense.textContent = (def >= 0 ? '+' : '') + def + '%';
+    if (valAlloc) valAlloc.textContent = alloc + '%';
+    if (valIntensity) valIntensity.textContent = inten;
+    if (valOil) valOil.textContent = (oil >= 0 ? '+' : '') + oil + '%';
 
-  set('res-defense', dr, 'pos', 'neg');
-  set('res-energy', er, 'pos', 'neg');
-  set('res-portfolio', pr, 'pos', 'neg');
+    var dr = (def * 1.85 + inten * .28).toFixed(1),
+        er = (oil * 1.6 + inten * .08).toFixed(1),
+        gr = (inten * .06 + Math.max(0, -def) * .4).toFixed(1),
+        cr = (-inten * .04 - oil * .2).toFixed(1),
+        ir = (oil * 1.1 + inten * .15).toFixed(1),
+        pr = ((alloc / 100) * parseFloat(dr) + (1 - alloc / 100) * parseFloat(er) * .3).toFixed(1);
 
-  var resGold = calcEls['res-gold'];
-  if (resGold) resGold.textContent = '+' + gr + '%';
+    var set = function(id, v, p, n) {
+      var el = calcEls[id];
+      if (el) {
+        el.textContent = (parseFloat(v) >= 0 ? '+' : '') + v + '%';
+        el.className = 'res-val ' + (parseFloat(v) > 0 ? p : parseFloat(v) < 0 ? n : 'neu');
+      }
+    };
 
-  set('res-consumer', cr, 'pos', 'neg');
+    set('res-defense', dr, 'pos', 'neg');
+    set('res-energy', er, 'pos', 'neg');
+    set('res-portfolio', pr, 'pos', 'neg');
 
-  var resInsurance = calcEls['res-insurance'];
-  if (resInsurance) resInsurance.textContent = '+' + ir + '% premium';
+    var resGold = calcEls['res-gold'];
+    if (resGold) resGold.textContent = '+' + gr + '%';
+
+    set('res-consumer', cr, 'pos', 'neg');
+
+    var resInsurance = calcEls['res-insurance'];
+    if (resInsurance) resInsurance.textContent = '+' + ir + '% premium';
+  });
 }
 
 /* expose observers globally so initResearch() can access them */
