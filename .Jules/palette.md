@@ -1,0 +1,3 @@
+## 2026-11-03 - Keyboard Accessibility Missing in Custom Interactions
+**Learning:** Custom interactions like sortable table headers (`<th>`) and toggling accordions (previously `<div>`, now `<button>`) must explicitly add `tabindex="0"`, `aria` attributes (like `aria-sort` and `aria-expanded`), and keyboard event listeners (`Enter` / `Space`) to match native HTML element accessibility patterns. The site also missed global `:focus-visible` styling for indicating active focus via keyboard navigation.
+**Action:** When implementing custom interactive elements, always consider the equivalent native semantic element (like `<button>`). Ensure `tabindex="0"` is present and provide global focus indication (e.g., `outline`) so keyboard users know their current position.

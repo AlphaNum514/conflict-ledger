@@ -547,6 +547,11 @@ footer {
   --white:    #ccc4b4;
 }
 
+:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
+}
+
 html {
   scroll-behavior: smooth;
   font-size: 16px;
@@ -910,10 +915,12 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 
 .gl-item { border-bottom: 1px solid var(--border); }
 .gl-item:last-child { border-bottom: none; }
 .gl-trigger {
+  width: 100%; border: none; background: transparent; font-family: inherit;
   padding: 11px 16px; display: flex; justify-content: space-between;
   align-items: center; cursor: pointer; transition: background var(--tr);
   touch-action: manipulation;
   -webkit-user-select: none; user-select: none;
+  text-align: left;
 }
 .gl-trigger:hover { background: var(--surface2); }
 .gl-term { font-size: 13px; font-weight: 600; color: var(--navy); }
@@ -2660,7 +2667,7 @@ body.show-research .nav-progress { display: block; }
     </div>
     <div class="table-wrap">
       <table id="sectorTable">
-        <thead><tr><th>Sector</th><th>YTD Return</th><th>Conflict Corr.</th><th>Risk Profile</th><th>Notes</th></tr></thead>
+        <thead><tr><th tabindex="0" aria-sort="none">Sector</th><th tabindex="0" aria-sort="none">YTD Return</th><th tabindex="0" aria-sort="none">Conflict Corr.</th><th tabindex="0" aria-sort="none">Risk Profile</th><th tabindex="0" aria-sort="none">Notes</th></tr></thead>
         <tbody>
           <tr data-tip="Includes LMT, NOC, RTX, GD, HII, BA (US) and BAE, Rheinmetall, Thales (EU). Correlation of 0.91 is highest of any sector tracked — government-backed revenue removes consumer cycle risk. Multi-year procurement contracts (MYP) extend revenue visibility 3–5 years.|Source: Bloomberg; SEC filings, YTD 2026"><td>Aerospace &amp; Defense</td><td data-label="YTD Return" class="tc-pos"><div class="td-bar"><div class="td-bar-fill" style="width:65px"></div>+32.4%</div></td><td data-label="Corr.">0.91</td><td data-label="Risk">LOW (gov-backed)</td><td data-label="Notes">Order books at multi-decade highs</td></tr>
           <tr data-tip="Private Military Companies and private security contractors. Highest conflict correlation (0.95) of any sector. Regulatory risk is elevated — the legal framework governing PMC operations remains fragmented internationally. Fastest-growing conflict vertical since 2022.|Source: Bloomberg; industry reports, YTD 2026"><td>Private Security / PMC</td><td data-label="YTD Return" class="tc-pos"><div class="td-bar"><div class="td-bar-fill" style="width:89px"></div>+44.6%</div></td><td data-label="Corr.">0.95</td><td data-label="Risk">HIGH (regulatory)</td><td data-label="Notes">Fastest growing conflict vertical</td></tr>
@@ -2940,14 +2947,14 @@ body.show-research .nav-progress { display: block; }
   <!-- FOOTNOTES -->
   <h2 class="section-hed reveal" id="glossary" style="margin-top:48px;">Technical Glossary</h2>
   <div class="glossary-list reveal">
-    <div class="gl-item"><div class="gl-trigger" onclick="toggleGl(this)"><span class="gl-term">Offset Agreement</span><span class="gl-arrow">›</span></div><div class="gl-def"><p>A condition imposed by a purchasing government requiring the defense contractor to invest a percentage of the contract value in the buyer's domestic economy — through local manufacturing, technology transfer, or subcontracting. Standard in international defense procurement above $50M. Offsets complicate headline contract valuations and are a significant negotiating variable in major arms deals.</p></div></div>
-    <div class="gl-item"><div class="gl-trigger" onclick="toggleGl(this)"><span class="gl-term">Multi-Year Procurement (MYP)</span><span class="gl-arrow">›</span></div><div class="gl-def"><p>A US defense contracting mechanism allowing DoD to commit to purchasing a specified quantity of a weapon system over multiple years (typically 3–5) in exchange for a lower per-unit price. MYP contracts provide defense contractors with extended revenue visibility. They are a key driver of the sector's countercyclical revenue profile and its resistance to standard macroeconomic downturns.</p></div></div>
-    <div class="gl-item"><div class="gl-trigger" onclick="toggleGl(this)"><span class="gl-term">Negative Externality</span><span class="gl-arrow">›</span></div><div class="gl-def"><p>An economic term for a cost imposed on a party not involved in the originating transaction. Civilian casualties in armed conflict are negative externalities of defense procurement — costs borne by affected populations but not reflected in the price or liability structure of any procurement contract. Unlike environmental externalities, no regulatory or litigation mechanism currently exists to internalize these costs at source.</p></div></div>
-    <div class="gl-item"><div class="gl-trigger" onclick="toggleGl(this)"><span class="gl-term">War Risk Premium</span><span class="gl-arrow">›</span></div><div class="gl-def"><p>An additional surcharge on maritime or aviation insurance for assets operating in or transiting conflict zones. Highly sensitive to geopolitical events — premiums can increase tenfold within days of a conflict escalation, as observed in the Red Sea from late 2023. Collected by insurers and reinsurers as revenue; represents a direct financial mechanism linking conflict intensity to insurance sector returns.</p></div></div>
-    <div class="gl-item"><div class="gl-trigger" onclick="toggleGl(this)"><span class="gl-term">ESG Exclusion Screen</span><span class="gl-arrow">›</span></div><div class="gl-def"><p>An investment mandate provision prohibiting holdings in sectors on environmental, social, or governance grounds. Defense sector exclusions are among the most common ESG screens in European institutional investment. Approximately $3.8T in AUM is currently managed under mandates with explicit defense restrictions (Morningstar, Q4 2024). The scope varies: some exclude all defense contractors; others exclude only manufacturers of controversial weapons (cluster munitions, landmines, nuclear warheads).</p></div></div>
-    <div class="gl-item"><div class="gl-trigger" onclick="toggleGl(this)"><span class="gl-term">Sondervermögen</span><span class="gl-arrow">›</span></div><div class="gl-def"><p>German: "special fund." A constitutionally permissible off-budget debt vehicle allowing the German government to fund expenditure outside its constitutional debt brake (Schuldenbremse). The €100B Sondervermögen announced in February 2022 was earmarked exclusively for Bundeswehr modernization — the largest single defense investment in post-war German history. It signaled a structural change in German defense policy with significant implications for the European defense industrial base.</p></div></div>
-    <div class="gl-item"><div class="gl-trigger" onclick="toggleGl(this)"><span class="gl-term">Private Military Company (PMC)</span><span class="gl-arrow">›</span></div><div class="gl-def"><p>A private sector entity providing military or security services under contract to state or non-state clients, including combat operations, training, intelligence, and site protection. PMCs operate in a fragmented international legal framework with variable accountability under domestic law and inconsistent coverage under international humanitarian law. The sector has recorded the highest conflict-correlated financial return of any category analyzed in this report.</p></div></div>
-    <div class="gl-item"><div class="gl-trigger" onclick="toggleGl(this)"><span class="gl-term">Pigouvian Tax / Corrective Mechanism</span><span class="gl-arrow">›</span></div><div class="gl-def"><p>A tax or regulatory mechanism designed to make the originator of a negative externality bear its cost — named after British economist Arthur Pigou. Carbon taxes are the best-known modern example. No equivalent mechanism currently exists for conflict-related civilian harm: no company pays a "harm tax" on weapons that kill civilians. The absence of such a mechanism is a structural feature of the current international legal and economic order, not an oversight.</p></div></div>
+    <div class="gl-item"><button class="gl-trigger" aria-expanded="false" onclick="toggleGl(this)"><span class="gl-term">Offset Agreement</span><span class="gl-arrow">›</span></button><div class="gl-def"><p>A condition imposed by a purchasing government requiring the defense contractor to invest a percentage of the contract value in the buyer's domestic economy — through local manufacturing, technology transfer, or subcontracting. Standard in international defense procurement above $50M. Offsets complicate headline contract valuations and are a significant negotiating variable in major arms deals.</p></div></div>
+    <div class="gl-item"><button class="gl-trigger" aria-expanded="false" onclick="toggleGl(this)"><span class="gl-term">Multi-Year Procurement (MYP)</span><span class="gl-arrow">›</span></button><div class="gl-def"><p>A US defense contracting mechanism allowing DoD to commit to purchasing a specified quantity of a weapon system over multiple years (typically 3–5) in exchange for a lower per-unit price. MYP contracts provide defense contractors with extended revenue visibility. They are a key driver of the sector's countercyclical revenue profile and its resistance to standard macroeconomic downturns.</p></div></div>
+    <div class="gl-item"><button class="gl-trigger" aria-expanded="false" onclick="toggleGl(this)"><span class="gl-term">Negative Externality</span><span class="gl-arrow">›</span></button><div class="gl-def"><p>An economic term for a cost imposed on a party not involved in the originating transaction. Civilian casualties in armed conflict are negative externalities of defense procurement — costs borne by affected populations but not reflected in the price or liability structure of any procurement contract. Unlike environmental externalities, no regulatory or litigation mechanism currently exists to internalize these costs at source.</p></div></div>
+    <div class="gl-item"><button class="gl-trigger" aria-expanded="false" onclick="toggleGl(this)"><span class="gl-term">War Risk Premium</span><span class="gl-arrow">›</span></button><div class="gl-def"><p>An additional surcharge on maritime or aviation insurance for assets operating in or transiting conflict zones. Highly sensitive to geopolitical events — premiums can increase tenfold within days of a conflict escalation, as observed in the Red Sea from late 2023. Collected by insurers and reinsurers as revenue; represents a direct financial mechanism linking conflict intensity to insurance sector returns.</p></div></div>
+    <div class="gl-item"><button class="gl-trigger" aria-expanded="false" onclick="toggleGl(this)"><span class="gl-term">ESG Exclusion Screen</span><span class="gl-arrow">›</span></button><div class="gl-def"><p>An investment mandate provision prohibiting holdings in sectors on environmental, social, or governance grounds. Defense sector exclusions are among the most common ESG screens in European institutional investment. Approximately $3.8T in AUM is currently managed under mandates with explicit defense restrictions (Morningstar, Q4 2024). The scope varies: some exclude all defense contractors; others exclude only manufacturers of controversial weapons (cluster munitions, landmines, nuclear warheads).</p></div></div>
+    <div class="gl-item"><button class="gl-trigger" aria-expanded="false" onclick="toggleGl(this)"><span class="gl-term">Sondervermögen</span><span class="gl-arrow">›</span></button><div class="gl-def"><p>German: "special fund." A constitutionally permissible off-budget debt vehicle allowing the German government to fund expenditure outside its constitutional debt brake (Schuldenbremse). The €100B Sondervermögen announced in February 2022 was earmarked exclusively for Bundeswehr modernization — the largest single defense investment in post-war German history. It signaled a structural change in German defense policy with significant implications for the European defense industrial base.</p></div></div>
+    <div class="gl-item"><button class="gl-trigger" aria-expanded="false" onclick="toggleGl(this)"><span class="gl-term">Private Military Company (PMC)</span><span class="gl-arrow">›</span></button><div class="gl-def"><p>A private sector entity providing military or security services under contract to state or non-state clients, including combat operations, training, intelligence, and site protection. PMCs operate in a fragmented international legal framework with variable accountability under domestic law and inconsistent coverage under international humanitarian law. The sector has recorded the highest conflict-correlated financial return of any category analyzed in this report.</p></div></div>
+    <div class="gl-item"><button class="gl-trigger" aria-expanded="false" onclick="toggleGl(this)"><span class="gl-term">Pigouvian Tax / Corrective Mechanism</span><span class="gl-arrow">›</span></button><div class="gl-def"><p>A tax or regulatory mechanism designed to make the originator of a negative externality bear its cost — named after British economist Arthur Pigou. Carbon taxes are the best-known modern example. No equivalent mechanism currently exists for conflict-related civilian harm: no company pays a "harm tax" on weapons that kill civilians. The absence of such a mechanism is a structural feature of the current international legal and economic order, not an oversight.</p></div></div>
   </div>
 
   <!-- METHODOLOGY SECTION -->
@@ -3457,6 +3464,7 @@ function toggleGl(trigger) {
   const def = trigger.nextElementSibling;
   trigger.classList.toggle('open');
   def.classList.toggle('open');
+  trigger.setAttribute('aria-expanded', trigger.classList.contains('open') ? 'true' : 'false');
 }
 
 /* FOOTNOTE SCROLL — Safari-safe */
@@ -3587,10 +3595,14 @@ if (_tblEl) {
   var tbl = _tblEl, tbdy = tbl.querySelector('tbody');
   var sc = -1, sd = 1;
   tbl.querySelectorAll('thead th').forEach(function(th, i) {
-    th.addEventListener('click', function() {
+    var triggerSort = function() {
       sc === i ? sd *= -1 : (sc = i, sd = 1);
-      tbl.querySelectorAll('thead th').forEach(function(t) { t.classList.remove('sort-asc', 'sort-desc'); });
+      tbl.querySelectorAll('thead th').forEach(function(t) {
+        t.classList.remove('sort-asc', 'sort-desc');
+        t.setAttribute('aria-sort', 'none');
+      });
       th.classList.add(sd === 1 ? 'sort-asc' : 'sort-desc');
+      th.setAttribute('aria-sort', sd === 1 ? 'ascending' : 'descending');
 
       var rows = Array.from(tbdy.querySelectorAll('tr'));
       var mapped = rows.map(function(row) {
@@ -3609,7 +3621,15 @@ if (_tblEl) {
       var frag = document.createDocumentFragment();
       mapped.forEach(function(item) { frag.appendChild(item.row); });
       tbdy.appendChild(frag);
+    };
+    th.addEventListener('click', triggerSort);
+    th.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        triggerSort();
+      }
     });
+
   });
 }
 
