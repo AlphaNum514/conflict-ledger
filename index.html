@@ -3792,12 +3792,18 @@ var PRESETS = {
 
 /*
   ⚡ Bolt Performance Optimization:
-  By caching lookups for frequently accessed calculator elements (`calcEls`), we completely
-  eliminate redundant DOM traversals (document.getElementById) on high-frequency drag/input
-  events. This drastically reduces layout thrashing, avoids frame drops, and keeps the page
-  responsiveness at a silky-smooth 60fps even on lower-end devices.
+  - Cached DOM Lookups: By caching lookups for frequently accessed calculator elements (`calcEls`),
+    we eliminate redundant DOM traversals (document.getElementById) on high-frequency drag/input events.
+  - Frame-Throttled Updates (`requestAnimationFrame`): When dragging range sliders, `input` events fire
+    at high frequencies (up to 120-240Hz on high refresh rate displays), far faster than the display's
+    refresh cycle. Throttling calculations with `calcRaf` batches and defers numeric recalculations
+    and DOM mutations to the next animation frame, preventing redundant computations and main thread
+    jank while maintaining 60+ FPS responsiveness. Synchronous execution is supported via `calcUpdate(true)`
+    for immediate preset application and initial load.
 */
 var calcEls = null;
+var calcRaf = false;
+
 function initCalcEls() {
   if (calcEls) return;
   calcEls = {
@@ -3826,10 +3832,10 @@ function applyPreset(name) {
   if (calcEls['sl-alloc'])     calcEls['sl-alloc'].value      = p.alloc;
   if (calcEls['sl-intensity']) calcEls['sl-intensity'].value  = p.intensity;
   if (calcEls['sl-oil'])       calcEls['sl-oil'].value        = p.oil;
-  calcUpdate();
+  calcUpdate(true);
 }
 
-function calcUpdate() {
+function doCalcUpdate() {
   initCalcEls();
   var slDefense = calcEls['sl-defense'], slAlloc = calcEls['sl-alloc'], slIntensity = calcEls['sl-intensity'], slOil = calcEls['sl-oil'];
   if (!slDefense || !slAlloc || !slIntensity || !slOil) return;
@@ -3871,6 +3877,20 @@ function calcUpdate() {
 
   var resInsurance = calcEls['res-insurance'];
   if (resInsurance) resInsurance.textContent = '+' + ir + '% premium';
+}
+
+function calcUpdate(sync) {
+  if (sync) {
+    calcRaf = false;
+    doCalcUpdate();
+    return;
+  }
+  if (calcRaf) return;
+  calcRaf = true;
+  requestAnimationFrame(function() {
+    calcRaf = false;
+    doCalcUpdate();
+  });
 }
 
 /* expose observers globally so initResearch() can access them */
