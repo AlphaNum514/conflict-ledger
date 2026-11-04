@@ -3826,10 +3826,20 @@ function applyPreset(name) {
   if (calcEls['sl-alloc'])     calcEls['sl-alloc'].value      = p.alloc;
   if (calcEls['sl-intensity']) calcEls['sl-intensity'].value  = p.intensity;
   if (calcEls['sl-oil'])       calcEls['sl-oil'].value        = p.oil;
-  calcUpdate();
+  calcUpdate(true);
 }
 
-function calcUpdate() {
+/*
+  ⚡ Bolt Performance Optimization:
+  Throttling high-frequency range slider `oninput` events via requestAnimationFrame (`calcRaf`).
+  When dragging sliders on high-polling devices (120Hz-240Hz), multiple input events fire per frame.
+  Scheduling the DOM calculations and updates once per display refresh frame eliminates redundant
+  layout recalculations and string formatting, ensuring consistent 60+ FPS performance.
+  An optional `immediate` flag allows button clicks (presets) and initialization to execute synchronously.
+*/
+var calcRaf = false;
+
+function performCalc() {
   initCalcEls();
   var slDefense = calcEls['sl-defense'], slAlloc = calcEls['sl-alloc'], slIntensity = calcEls['sl-intensity'], slOil = calcEls['sl-oil'];
   if (!slDefense || !slAlloc || !slIntensity || !slOil) return;
@@ -3871,6 +3881,20 @@ function calcUpdate() {
 
   var resInsurance = calcEls['res-insurance'];
   if (resInsurance) resInsurance.textContent = '+' + ir + '% premium';
+}
+
+function calcUpdate(immediate) {
+  if (immediate) {
+    calcRaf = false;
+    performCalc();
+    return;
+  }
+  if (calcRaf) return;
+  calcRaf = true;
+  requestAnimationFrame(function() {
+    calcRaf = false;
+    performCalc();
+  });
 }
 
 /* expose observers globally so initResearch() can access them */
