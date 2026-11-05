@@ -119,6 +119,8 @@ body.show-research #view-research { display: block; }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+
 :root {
   --white:   #ffffff;
   --off:     #f7f5f0;
@@ -1774,10 +1776,10 @@ body.show-research .nav-progress { display: block; }
 <div id="sw-bar">
   <span class="sw-logo">THE CONFLICT LEDGER <span style="background:#d42b2b;color:#fff;font-size:8px;padding:1px 6px;margin-left:6px;letter-spacing:.1em;">v3.0</span></span>
   <div class="sw-tabs">
-    <button class="sw-tab sw-active" id="tab-simple"   onclick="switchView('simple')">
+    <button class="sw-tab sw-active" id="tab-simple"   onclick="switchView('simple')" aria-pressed="true">
       Public Edition <span class="sw-badge">Overview</span>
     </button>
-    <button class="sw-tab"           id="tab-research" onclick="switchView('research')">
+    <button class="sw-tab"           id="tab-research" onclick="switchView('research')" aria-pressed="false">
       Research Edition <span class="sw-badge">Full Report</span>
     </button>
   </div>
@@ -3196,7 +3198,9 @@ window.switchView = function switchView(v) {
   var isRes = v === 'research';
   document.body.classList.toggle('show-research', isRes);
   document.getElementById('tab-simple').classList.toggle('sw-active', !isRes);
+  document.getElementById('tab-simple').setAttribute('aria-pressed', !isRes ? 'true' : 'false');
   document.getElementById('tab-research').classList.toggle('sw-active', isRes);
+  document.getElementById('tab-research').setAttribute('aria-pressed', isRes ? 'true' : 'false');
   window.scrollTo(0, 0);
   if (isRes && !window._resInited) { window._resInited = true; initResearch(); }
   if (window.refreshOffsets) window.refreshOffsets();

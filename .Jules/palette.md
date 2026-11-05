@@ -1,0 +1,3 @@
+## 2025-11-05 - Add keyboard focus indicators and ARIA states
+**Learning:** The documentation claimed that `:focus-visible` styles and `aria-pressed` states were fully implemented and screen reader ready, but they were missing from the actual source code. In zero-build projects with manual dependency management, there can be a drift between the README's accessibility claims and the actual implemented state of the code.
+**Action:** Always manually verify the existence of stated CSS classes and ARIA attributes in the source code rather than relying solely on documentation claims, especially for accessibility features.
