@@ -3433,7 +3433,7 @@ function initResearch() {
   if (window.rObs)  document.querySelectorAll('#view-research .reveal').forEach(function(el){ window.rObs.observe(el); });
   if (window.cuObs) document.querySelectorAll('#view-research [data-target]').forEach(function(el){ window.cuObs.observe(el); });
   if (window.bObs)  document.querySelectorAll('#view-research .cf-bar-fill').forEach(function(el){ window.bObs.observe(el); });
-  if (window.calcUpdate) window.calcUpdate();
+  if (window.calcUpdate) window.calcUpdate(true);
 }
 
 /* ─── RESEARCH SCRIPTS (isolated scope) ────────────────────── */
@@ -3792,12 +3792,18 @@ var PRESETS = {
 
 /*
   ⚡ Bolt Performance Optimization:
-  By caching lookups for frequently accessed calculator elements (`calcEls`), we completely
-  eliminate redundant DOM traversals (document.getElementById) on high-frequency drag/input
-  events. This drastically reduces layout thrashing, avoids frame drops, and keeps the page
-  responsiveness at a silky-smooth 60fps even on lower-end devices.
+  - Caching DOM Elements: By caching lookups for frequently accessed calculator elements (`calcEls`),
+    we eliminate redundant DOM traversals (`document.getElementById`) on high-frequency drag/input events.
+  - Frame-Rate Throttling via requestAnimationFrame (rAF): Continuous slider dragging generates dozens
+    to hundreds of `oninput` events per second, causing repeated floating-point calculations and 10 DOM
+    text node mutations between display refreshes. We guard calculation updates with a `calcRaf` gate,
+    coalescing burst input events into a single render pass aligned with the browser monitor's refresh
+    cycle (60-120Hz). An immediate bypass `calcUpdate(true)` is provided for programmatic preset buttons
+    and initial research view rendering.
 */
 var calcEls = null;
+var calcRaf = false;
+
 function initCalcEls() {
   if (calcEls) return;
   calcEls = {
@@ -3826,10 +3832,10 @@ function applyPreset(name) {
   if (calcEls['sl-alloc'])     calcEls['sl-alloc'].value      = p.alloc;
   if (calcEls['sl-intensity']) calcEls['sl-intensity'].value  = p.intensity;
   if (calcEls['sl-oil'])       calcEls['sl-oil'].value        = p.oil;
-  calcUpdate();
+  calcUpdate(true);
 }
 
-function calcUpdate() {
+function performCalc() {
   initCalcEls();
   var slDefense = calcEls['sl-defense'], slAlloc = calcEls['sl-alloc'], slIntensity = calcEls['sl-intensity'], slOil = calcEls['sl-oil'];
   if (!slDefense || !slAlloc || !slIntensity || !slOil) return;
@@ -3871,6 +3877,20 @@ function calcUpdate() {
 
   var resInsurance = calcEls['res-insurance'];
   if (resInsurance) resInsurance.textContent = '+' + ir + '% premium';
+}
+
+function calcUpdate(immediate) {
+  if (immediate === true) {
+    calcRaf = false;
+    performCalc();
+    return;
+  }
+  if (calcRaf) return;
+  calcRaf = true;
+  requestAnimationFrame(function() {
+    performCalc();
+    calcRaf = false;
+  });
 }
 
 /* expose observers globally so initResearch() can access them */
