@@ -1,0 +1,3 @@
+## 2023-10-27 - Use Native Button Elements for Accessible Triggers
+**Learning:** Using `div` elements with `onclick` for interactive triggers breaks keyboard accessibility. They are not naturally focusable and do not activate with Space/Enter. Native `<button>` elements solve this implicitly.
+**Action:** Replaced `div` elements for accordion triggers with `button` elements, added `aria-expanded` properties, and reset default button CSS using `width: 100%; border: none; background: transparent; text-align: left; font-family: inherit;` to maintain visual consistency. Added `:focus-visible` ring.
