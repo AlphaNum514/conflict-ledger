@@ -1,0 +1,3 @@
+## 2024-11-07 - Focus Visibility on Custom Themes
+**Learning:** Default browser focus outlines are often removed globally using `outline: none` (or border properties) during custom theme development, or simply lack sufficient contrast against non-standard background colors. In vanilla HTML/CSS projects without a reset or framework, they are frequently omitted entirely, which severely impacts keyboard navigation accessibility.
+**Action:** Always implement explicit `:focus-visible` styles with sufficient contrast (e.g., utilizing existing design tokens like `var(--red)`) in the global stylesheet. Use `outline` rather than `box-shadow` or `border` to avoid layout shifts and ensure consistency across UI components.
