@@ -119,6 +119,11 @@ body.show-research #view-research { display: block; }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 :root {
   --white:   #ffffff;
   --off:     #f7f5f0;
@@ -857,7 +862,7 @@ tbody td:first-child { color: var(--navy); font-weight: 500; }
 .calc-inputs { padding: 20px 22px; border-right: 1px solid var(--border); }
 .calc-inputs h4 { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
 .slider-row { margin-bottom: 16px; }
-.slider-label { display: flex; justify-content: space-between; margin-bottom: 5px; }
+.slider-label { display: flex; justify-content: space-between; margin-bottom: 5px; cursor: pointer; }
 .slider-name { font-size: 12px; color: var(--text); }
 .slider-val { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--blue); font-weight: 700; }
 input[type=range] {
@@ -2440,9 +2445,9 @@ body.show-research .nav-progress { display: block; }
   <div class="map-section reveal" id="map">
     <div class="map-header">
       <span class="map-title">⬤ Active Conflict Zones — Economic Impact Map</span>
-      <div class="map-layer-toggle">
-        <button class="map-layer-btn active" onclick="setMapLayer('human')" id="btn-human">Human Cost</button>
-        <button class="map-layer-btn" onclick="setMapLayer('financial')" id="btn-financial">Financial Flow</button>
+      <div class="map-layer-toggle" role="group" aria-label="Map Layers">
+        <button class="map-layer-btn active" onclick="setMapLayer('human')" id="btn-human" aria-pressed="true">Human Cost</button>
+        <button class="map-layer-btn" onclick="setMapLayer('financial')" id="btn-financial" aria-pressed="false">Financial Flow</button>
       </div>
     </div>
     <div id="conflict-map-wrap">
@@ -2896,22 +2901,22 @@ body.show-research .nav-progress { display: block; }
       <div class="calc-inputs">
         <h4>Input Parameters</h4>
         <div class="slider-row">
-          <div class="slider-label"><span class="slider-name">Defense Budget Change (%)</span><span class="slider-val" id="val-defense">+10%</span></div>
+          <label class="slider-label" for="sl-defense"><span class="slider-name">Defense Budget Change (%)</span><span class="slider-val" id="val-defense">+10%</span></label>
           <input type="range" id="sl-defense" min="-20" max="40" value="10" step="1" oninput="calcUpdate()">
           <div class="slider-hint">NATO member avg. annual change · 2024 actual: +8.3% (NATO Secretary General Report)</div>
         </div>
         <div class="slider-row">
-          <div class="slider-label"><span class="slider-name">Portfolio Defense Allocation (%)</span><span class="slider-val" id="val-alloc">20%</span></div>
+          <label class="slider-label" for="sl-alloc"><span class="slider-name">Portfolio Defense Allocation (%)</span><span class="slider-val" id="val-alloc">20%</span></label>
           <input type="range" id="sl-alloc" min="0" max="60" value="20" step="1" oninput="calcUpdate()">
           <div class="slider-hint">Share of total portfolio in defense &amp; aerospace equities</div>
         </div>
         <div class="slider-row">
-          <div class="slider-label"><span class="slider-name">Conflict Intensity (0–100)</span><span class="slider-val" id="val-intensity">70</span></div>
+          <label class="slider-label" for="sl-intensity"><span class="slider-name">Conflict Intensity (0–100)</span><span class="slider-val" id="val-intensity">70</span></label>
           <input type="range" id="sl-intensity" min="0" max="100" value="70" step="5" oninput="calcUpdate()">
           <div class="slider-hint">Composite index. 0 = no active conflict; 100 = generalized major-power war. Current: ~84</div>
         </div>
         <div class="slider-row">
-          <div class="slider-label"><span class="slider-name">Oil Supply Disruption (%)</span><span class="slider-val" id="val-oil">5%</span></div>
+          <label class="slider-label" for="sl-oil"><span class="slider-name">Oil Supply Disruption (%)</span><span class="slider-val" id="val-oil">5%</span></label>
           <input type="range" id="sl-oil" min="-10" max="30" value="5" step="1" oninput="calcUpdate()">
           <div class="slider-hint">% reduction in global oil supply attributable to conflict zone disruption</div>
         </div>
@@ -4048,8 +4053,14 @@ function initMapBtnEls() {
 function setMapLayer(layer) {
   currentMapLayer = layer;
   initMapBtnEls();
-  if (mapBtnHuman) mapBtnHuman.classList.toggle('active', layer === 'human');
-  if (mapBtnFinancial) mapBtnFinancial.classList.toggle('active', layer === 'financial');
+  if (mapBtnHuman) {
+    mapBtnHuman.classList.toggle('active', layer === 'human');
+    mapBtnHuman.setAttribute('aria-pressed', layer === 'human');
+  }
+  if (mapBtnFinancial) {
+    mapBtnFinancial.classList.toggle('active', layer === 'financial');
+    mapBtnFinancial.setAttribute('aria-pressed', layer === 'financial');
+  }
 
   if (!conflictMap) return;
 
