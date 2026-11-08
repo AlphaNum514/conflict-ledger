@@ -3826,10 +3826,13 @@ function applyPreset(name) {
   if (calcEls['sl-alloc'])     calcEls['sl-alloc'].value      = p.alloc;
   if (calcEls['sl-intensity']) calcEls['sl-intensity'].value  = p.intensity;
   if (calcEls['sl-oil'])       calcEls['sl-oil'].value        = p.oil;
-  calcUpdate();
+  // Apply preset synchronously so UI reflects changes immediately without waiting for rAF
+  calcUpdate(true);
 }
 
-function calcUpdate() {
+var calcRaf = false;
+
+function doCalcUpdate() {
   initCalcEls();
   var slDefense = calcEls['sl-defense'], slAlloc = calcEls['sl-alloc'], slIntensity = calcEls['sl-intensity'], slOil = calcEls['sl-oil'];
   if (!slDefense || !slAlloc || !slIntensity || !slOil) return;
@@ -3871,6 +3874,31 @@ function calcUpdate() {
 
   var resInsurance = calcEls['res-insurance'];
   if (resInsurance) resInsurance.textContent = '+' + ir + '% premium';
+}
+
+/*
+  ⚡ Bolt Performance Optimization:
+  - Throttled Slider Updates with requestAnimationFrame: Range slider `oninput` events can fire
+    at 120-240Hz during active dragging on modern high-refresh screens and touch devices.
+    Throttling updates with `requestAnimationFrame` (`calcRaf`) batches calculations and DOM
+    text node / class modifications to match the display refresh rate (~60-120 FPS),
+    eliminating redundant computations and main-thread layout recalculations between display frames.
+  - Immediate Sync Execution for Presets: Passing `immediate === true` bypasses the rAF gate
+    for instantaneous updates when applying presets or during programmatic initializations.
+*/
+function calcUpdate(immediate) {
+  if (immediate) {
+    calcRaf = false;
+    doCalcUpdate();
+    return;
+  }
+  if (!calcRaf) {
+    calcRaf = true;
+    requestAnimationFrame(function() {
+      calcRaf = false;
+      doCalcUpdate();
+    });
+  }
 }
 
 /* expose observers globally so initResearch() can access them */
