@@ -1,0 +1,3 @@
+## 2024-11-09 - Label Wrapping for Input Sliders
+**Learning:** Found an accessibility issue pattern specific to this app's calculator components. Instead of using `<label>` tags with matching `for` attributes for sliders, it used `<span>` tags for labels (`<span class="slider-name">`). This prevents users from focusing the slider by simply clicking on the label text.
+**Action:** When working on similar custom form or calculator inputs, always verify that text labels are proper `<label for="...">` tags linked to the input's ID, especially in non-standard inputs like range sliders where focus targets are small.
