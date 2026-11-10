@@ -3826,10 +3826,39 @@ function applyPreset(name) {
   if (calcEls['sl-alloc'])     calcEls['sl-alloc'].value      = p.alloc;
   if (calcEls['sl-intensity']) calcEls['sl-intensity'].value  = p.intensity;
   if (calcEls['sl-oil'])       calcEls['sl-oil'].value        = p.oil;
-  calcUpdate();
+  calcUpdate(true);
 }
 
-function calcUpdate() {
+var calcRaf = null;
+
+/*
+  ⚡ Bolt Performance Optimization:
+  Throttling Portfolio Impact Simulator updates via `requestAnimationFrame` (`calcRaf`).
+  During continuous range slider drag events (`oninput`), events fire at unconstrained high frequencies
+  (up to hundreds of times per second depending on mouse/touch polling rate). Recalculating mathematical
+  models and repeatedly mutating 10 DOM text nodes and class attributes synchronously on every input event
+  causes severe layout thrashing and dropped animation frames.
+  Batching execution to at most once per display animation frame (~60-120 FPS) ensures silky-smooth dragging,
+  while accepting a `sync === true` flag for instant execution when applying presets or during initialization.
+*/
+function calcUpdate(sync) {
+  if (sync) {
+    if (calcRaf) {
+      cancelAnimationFrame(calcRaf);
+      calcRaf = null;
+    }
+    doCalcUpdate();
+    return;
+  }
+
+  if (calcRaf) return;
+  calcRaf = requestAnimationFrame(function() {
+    calcRaf = null;
+    doCalcUpdate();
+  });
+}
+
+function doCalcUpdate() {
   initCalcEls();
   var slDefense = calcEls['sl-defense'], slAlloc = calcEls['sl-alloc'], slIntensity = calcEls['sl-intensity'], slOil = calcEls['sl-oil'];
   if (!slDefense || !slAlloc || !slIntensity || !slOil) return;
