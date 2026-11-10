@@ -17,3 +17,7 @@
 ## 2026-09-28 - Redundant DOM Queries and Function Wrapper Duplication in Interactive Switchers
 **Learning:** In single-file vanilla JS architectures, monkey-patching event handlers across script blocks (e.g. wrapping `window.showScenario` to attach accessibility attributes) often introduces duplicate DOM queries (`document.querySelectorAll`, `getElementById`) and redundant iteration loops on user interactions.
 **Action:** Lazily initialize a DOM cache object (`scEls`, `scBtnMap`) on first interaction, and consolidate class state (`s-active`), ARIA attribute (`aria-pressed`), and content mutations into a single function pass. Defer secondary layout recalculations (`window.refreshOffsets`) using `requestAnimationFrame`.
+
+## 2026-10-24 - High-Frequency Slider Input Flooding and Un-throttled Model Calculations
+**Learning:** Range sliders firing `oninput` events emit unconstrained events matching the device polling rate (up to 120Hz-240Hz on modern touchscreens/gaming mice). Running math calculations and synchronously mutating multiple DOM elements (text nodes and class toggles) on every input event floods the main thread and causes severe frame jank and layout thrashing.
+**Action:** Gate input-driven calculator calculations behind a `requestAnimationFrame` flag to batch DOM updates to at most once per display refresh frame (~60-120 FPS), while offering a synchronous bypass (`sync === true`) for preset clicks and programmatic initializations.
