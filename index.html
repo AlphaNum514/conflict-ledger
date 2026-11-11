@@ -3792,12 +3792,16 @@ var PRESETS = {
 
 /*
   ⚡ Bolt Performance Optimization:
-  By caching lookups for frequently accessed calculator elements (`calcEls`), we completely
-  eliminate redundant DOM traversals (document.getElementById) on high-frequency drag/input
-  events. This drastically reduces layout thrashing, avoids frame drops, and keeps the page
-  responsiveness at a silky-smooth 60fps even on lower-end devices.
+  - Caching Calculator Elements (`calcEls`): Eliminates repeated DOM lookups (`getElementById`)
+    on high-frequency slider drag/input events.
+  - Frame Throttling via requestAnimationFrame (`calcRaf`): Throttles rapid continuous `oninput`
+    slider events to the monitor refresh rate (~60-120 FPS). This eliminates intermediate redundant
+    math recalculations, string allocations, and DOM property writes during fast slider drags,
+    while `calcUpdate(true)` allows immediate synchronous execution for presets and initial setup.
 */
 var calcEls = null;
+var calcRaf = false;
+
 function initCalcEls() {
   if (calcEls) return;
   calcEls = {
@@ -3826,10 +3830,24 @@ function applyPreset(name) {
   if (calcEls['sl-alloc'])     calcEls['sl-alloc'].value      = p.alloc;
   if (calcEls['sl-intensity']) calcEls['sl-intensity'].value  = p.intensity;
   if (calcEls['sl-oil'])       calcEls['sl-oil'].value        = p.oil;
-  calcUpdate();
+  calcUpdate(true);
 }
 
-function calcUpdate() {
+function calcUpdate(immediate) {
+  if (immediate) {
+    runCalcUpdate();
+    return;
+  }
+  if (!calcRaf) {
+    calcRaf = true;
+    requestAnimationFrame(function() {
+      runCalcUpdate();
+      calcRaf = false;
+    });
+  }
+}
+
+function runCalcUpdate() {
   initCalcEls();
   var slDefense = calcEls['sl-defense'], slAlloc = calcEls['sl-alloc'], slIntensity = calcEls['sl-intensity'], slOil = calcEls['sl-oil'];
   if (!slDefense || !slAlloc || !slIntensity || !slOil) return;
